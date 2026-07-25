@@ -114,6 +114,8 @@ export function App() {
   const [importedTransactions, setImportedTransactions] = useState<Transaction[]>([]);
   const [importedCustomers, setImportedCustomers] = useState<Customer[]>([]);
   const [dataset, setDataset] = useState<DatasetResponse | null>(null);
+  const [datasetLoading, setDatasetLoading] = useState(true);
+  const [datasetError, setDatasetError] = useState<string | null>(null);
   const [datasetName, setDatasetName] = useState("Global retail transactions");
   const [history, setHistory] = useState<InvestigationResponse[]>([]);
   const [reviewStates, setReviewStates] = useState<Record<string, ReviewStatus>>(
@@ -146,6 +148,27 @@ export function App() {
     },
     [],
   );
+
+  const loadDataset = useCallback(async (): Promise<DatasetResponse | null> => {
+    setDatasetLoading(true);
+    setDatasetError(null);
+    try {
+      const sample = await getDataset();
+      setDataset(sample);
+      setDatasetName("Global retail transactions");
+      return sample;
+    } catch (caught) {
+      setDataset(null);
+      setDatasetError(
+        caught instanceof Error
+          ? caught.message
+          : "The active dataset could not be loaded.",
+      );
+      return null;
+    } finally {
+      setDatasetLoading(false);
+    }
+  }, []);
 
   const investigate = useCallback(
     async (
@@ -201,11 +224,9 @@ export function App() {
   useEffect(() => {
     if (hasBootstrapped.current) return;
     hasBootstrapped.current = true;
-    void getDataset()
-      .then((sample) => setDataset(sample))
-      .catch(() => setError("The synthetic dataset could not be loaded."));
+    void loadDataset();
     void investigate(DEFAULT_QUERY, [], []);
-  }, [investigate]);
+  }, [investigate, loadDataset]);
 
   const selected = useMemo(
     () =>
@@ -235,6 +256,8 @@ export function App() {
         customers,
         knownDemoPatterns: [],
       });
+      setDatasetError(null);
+      setDatasetLoading(false);
       setDatasetName(file.name);
       appendAudit({
         actor: "Ankit Marik",
@@ -291,9 +314,8 @@ export function App() {
 
   const resetDataset = async () => {
     try {
-      const sample = await getDataset();
-      setDataset(sample);
-      setDatasetName("Global retail transactions");
+      const sample = await loadDataset();
+      if (!sample) return;
       setImportedTransactions([]);
       setImportedCustomers([]);
       appendAudit({
@@ -440,7 +462,11 @@ export function App() {
               <span>Active dataset</span>
               <strong>{datasetName}</strong>
             </div>
-            <span className="live-dot">Live</span>
+            <span
+              className={`live-dot ${datasetError ? "live-dot--error" : ""}`}
+            >
+              {datasetLoading ? "Loading" : datasetError ? "Unavailable" : "Live"}
+            </span>
           </div>
           <div className="topbar__actions">
             <span className="sync-status">
@@ -554,7 +580,10 @@ export function App() {
               <button
                 type="button"
                 className="button button--quiet"
-                onClick={() => void investigate(query)}
+                onClick={() => {
+                  if (!dataset) void loadDataset();
+                  void investigate(query);
+                }}
               >
                 Retry
               </button>
@@ -598,6 +627,8 @@ export function App() {
               reviewFindings={reviewFindings}
               dataset={dataset}
               datasetName={datasetName}
+              datasetLoading={datasetLoading}
+              datasetError={datasetError}
               imported={importedTransactions.length > 0}
               reviewStates={reviewStates}
               policy={policy}
@@ -607,6 +638,7 @@ export function App() {
               onReviewStatus={changeReviewStatus}
               onImport={() => fileInputRef.current?.click()}
               onResetDataset={() => void resetDataset()}
+              onRetryDataset={() => void loadDataset()}
               onApplyPolicy={applyPolicy}
             />
           )}

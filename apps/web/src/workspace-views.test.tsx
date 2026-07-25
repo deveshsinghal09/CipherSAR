@@ -114,6 +114,8 @@ describe("workspace sidebar views", () => {
           reviewFindings={[]}
           dataset={dataset}
           datasetName={dataset.name}
+          datasetLoading={false}
+          datasetError={null}
           imported={false}
           reviewStates={{}}
           policy={DEFAULT_AML_POLICY}
@@ -123,10 +125,39 @@ describe("workspace sidebar views", () => {
           onReviewStatus={vi.fn()}
           onImport={vi.fn()}
           onResetDataset={vi.fn()}
+          onRetryDataset={vi.fn()}
           onApplyPolicy={vi.fn()}
         />,
       );
       expect(markup).toContain(heading);
     },
   );
+
+  it("offers dataset recovery instead of rendering empty dependent pages", () => {
+    const markup = renderToStaticMarkup(
+      <WorkspaceViews
+        activeView="customers"
+        history={[]}
+        result={null}
+        reviewFindings={[]}
+        dataset={null}
+        datasetName="Global retail transactions"
+        datasetLoading={false}
+        datasetError="The CipherSAR API is unavailable."
+        imported={false}
+        reviewStates={{}}
+        policy={DEFAULT_AML_POLICY}
+        auditEvents={[]}
+        onOpenInvestigation={vi.fn()}
+        onInvestigateCustomer={vi.fn()}
+        onReviewStatus={vi.fn()}
+        onImport={vi.fn()}
+        onResetDataset={vi.fn()}
+        onRetryDataset={vi.fn()}
+        onApplyPolicy={vi.fn()}
+      />,
+    );
+    expect(markup).toContain("Retry dataset");
+    expect(markup).toContain("CipherSAR API is unavailable");
+  });
 });

@@ -59,6 +59,8 @@ interface WorkspaceViewsProps {
   reviewFindings: RiskFinding[];
   dataset: DatasetResponse | null;
   datasetName: string;
+  datasetLoading: boolean;
+  datasetError: string | null;
   imported: boolean;
   reviewStates: Record<string, ReviewStatus>;
   policy: AmlPolicy;
@@ -68,10 +70,25 @@ interface WorkspaceViewsProps {
   onReviewStatus: (finding: RiskFinding, status: ReviewStatus) => void;
   onImport: () => void;
   onResetDataset: () => void;
+  onRetryDataset: () => void;
   onApplyPolicy: (policy: AmlPolicy) => void;
 }
 
 export function WorkspaceViews(props: WorkspaceViewsProps) {
+  if (
+    !props.dataset &&
+    ["customers", "transactions", "datasets"].includes(props.activeView)
+  ) {
+    return (
+      <DatasetDependencyView
+        view={props.activeView}
+        loading={props.datasetLoading}
+        error={props.datasetError}
+        onRetry={props.onRetryDataset}
+        onImport={props.onImport}
+      />
+    );
+  }
   switch (props.activeView) {
     case "investigations":
       return (
@@ -126,6 +143,64 @@ export function WorkspaceViews(props: WorkspaceViewsProps) {
         />
       );
   }
+}
+
+function DatasetDependencyView({
+  view,
+  loading,
+  error,
+  onRetry,
+  onImport,
+}: {
+  view: Exclude<WorkspaceView, "command">;
+  loading: boolean;
+  error: string | null;
+  onRetry: () => void;
+  onImport: () => void;
+}) {
+  const labels = {
+    customers: ["Entity intelligence", "Customers", Users],
+    transactions: ["Transaction explorer", "Transactions", Activity],
+    datasets: ["Data operations", "Datasets", Database],
+  } as const;
+  const [eyebrow, title, Icon] =
+    labels[view as keyof typeof labels] ?? labels.datasets;
+  return (
+    <div className="workspace-view">
+      <ViewHeader
+        eyebrow={eyebrow}
+        title={title}
+        description="This workspace requires the active customer and transaction dataset."
+        icon={Icon}
+      />
+      <section className="panel dataset-dependency">
+        <div className={`dataset-dependency__icon ${error ? "is-error" : ""}`}>
+          {loading ? <RefreshCw className="spin" size={24} /> : <Database size={24} />}
+        </div>
+        <div>
+          <span className="section-kicker">
+            {loading ? "Connecting" : "Dataset unavailable"}
+          </span>
+          <h2>{loading ? "Loading the active dataset" : "Reconnect data services"}</h2>
+          <p>
+            {loading
+              ? "Customer and transaction records will appear as soon as the API responds."
+              : error ?? "The active dataset could not be loaded."}
+          </p>
+        </div>
+        {!loading ? (
+          <div className="dataset-dependency__actions">
+            <button className="button button--primary" type="button" onClick={onRetry}>
+              <RefreshCw size={15} /> Retry dataset
+            </button>
+            <button className="button button--quiet" type="button" onClick={onImport}>
+              <UploadCloud size={15} /> Import CSV
+            </button>
+          </div>
+        ) : null}
+      </section>
+    </div>
+  );
 }
 
 function ModelIntelligenceView({ model }: { model: ModelMetadata | null }) {
