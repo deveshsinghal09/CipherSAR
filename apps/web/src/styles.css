@@ -559,6 +559,18 @@ td span { margin-top:4px; font-size:10px; }
 .empty-state strong { font-size:15px; }
 .empty-state span { max-width:400px; font-size:12px; line-height:1.6; }
 .ui-empty-state__action { margin-top:8px; }
+.ready-state {
+  overflow:hidden;
+  margin-top:18px;
+  background:
+    radial-gradient(circle at 50% 0,rgba(140,232,188,.08),transparent 46%),
+    linear-gradient(180deg,rgba(19,27,38,.82),rgba(14,20,29,.94));
+}
+.ready-state .empty-state { min-height:210px; }
+.ready-state .ui-empty-state__icon {
+  border-color:rgba(140,232,188,.18);
+  box-shadow:0 14px 34px rgba(140,232,188,.08);
+}
 .ui-skeleton { min-height:88px; border-radius:18px; background:linear-gradient(100deg,#101722 20%,#192534 50%,#101722 80%);background-size:300% 100%;animation:shimmer 1.5s infinite; }
 
 .review-grid { gap:16px; padding:18px; }

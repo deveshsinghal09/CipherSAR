@@ -231,8 +231,7 @@ export function App() {
     if (hasBootstrapped.current) return;
     hasBootstrapped.current = true;
     void loadDataset();
-    void investigate(DEFAULT_QUERY, [], []);
-  }, [investigate, loadDataset]);
+  }, [loadDataset]);
 
   const selected = useMemo(
     () =>
@@ -245,6 +244,13 @@ export function App() {
   const onSubmit = (event: FormEvent) => {
     event.preventDefault();
     if (query.trim().length >= 3) void investigate(query.trim());
+  };
+
+  const updatePreparedQuery = (nextQuery: string) => {
+    setQuery(nextQuery);
+    setResult(null);
+    setSelectedId(null);
+    setError(null);
   };
 
   const onImport = async (event: ChangeEvent<HTMLInputElement>) => {
@@ -271,7 +277,9 @@ export function App() {
         detail: `${file.name} activated with ${transactions.length} transactions across ${customers.length} customers.`,
         category: "dataset",
       });
-      await investigate(query, transactions, customers);
+      setResult(null);
+      setSelectedId(null);
+      setError(null);
     } catch (caught) {
       setError(
         caught instanceof Error
@@ -288,6 +296,11 @@ export function App() {
     setMobileNavOpen(false);
   };
 
+  const prepareInvestigation = (nextQuery: string) => {
+    updatePreparedQuery(nextQuery);
+    navigate("command");
+  };
+
   const openInvestigation = (investigation: InvestigationResponse) => {
     setResult(investigation);
     setSelectedId(investigation.findings[0]?.entityId ?? null);
@@ -296,10 +309,7 @@ export function App() {
   };
 
   const investigateCustomer = (customerId: string) => {
-    const nextQuery = `Is customer ID ${customerId} suspicious?`;
-    setQuery(nextQuery);
-    navigate("command");
-    void investigate(nextQuery);
+    prepareInvestigation(`Is customer ID ${customerId} suspicious?`);
   };
 
   const changeReviewStatus = (
@@ -330,7 +340,7 @@ export function App() {
         detail: `${sample.transactions.length} transactions and ${sample.customers.length} customers are active.`,
         category: "dataset",
       });
-      await investigate(DEFAULT_QUERY, [], []);
+      updatePreparedQuery(DEFAULT_QUERY);
     } catch (caught) {
       setError(
         caught instanceof Error
@@ -348,12 +358,9 @@ export function App() {
       detail: `Risk bands set to ${nextPolicy.mediumRiskThreshold}/${nextPolicy.highRiskThreshold}; escalation gates set to ${nextPolicy.reviewThreshold}/${nextPolicy.reportThreshold}.`,
       category: "policy",
     });
-    void investigate(
-      query,
-      importedTransactions,
-      importedCustomers,
-      nextPolicy,
-    );
+    setResult(null);
+    setSelectedId(null);
+    setError(null);
   };
 
   const reviewFindings = useMemo(() => {
@@ -541,7 +548,7 @@ export function App() {
               <Search size={20} aria-hidden="true" />
               <input
                 value={query}
-                onChange={(event) => setQuery(event.target.value)}
+                onChange={(event) => updatePreparedQuery(event.target.value)}
                 placeholder="e.g. Find structuring patterns in the last 30 days"
                 aria-label="Investigation query"
               />
@@ -550,6 +557,7 @@ export function App() {
                 variant="primary"
                 size="lg"
                 loading={loading}
+                disabled={query.trim().length < 3}
                 leadingIcon={<Fingerprint size={17} />}
               >
                 {loading ? "Investigating" : "Investigate"}
@@ -561,10 +569,7 @@ export function App() {
                 <button
                   type="button"
                   key={example}
-                  onClick={() => {
-                    setQuery(example);
-                    void investigate(example);
-                  }}
+                  onClick={() => prepareInvestigation(example)}
                 >
                   {shortenExample(example)}
                 </button>
@@ -596,6 +601,15 @@ export function App() {
           ) : null}
 
           {loading && !result ? <DashboardSkeleton /> : null}
+          {!loading && !result && !error ? (
+            <Card className="ready-state" aria-live="polite">
+              <EmptyState
+                icon={Fingerprint}
+                title="Ready to investigate"
+                detail="Review or edit the prepared query, then click Investigate. No analysis runs until you start it."
+              />
+            </Card>
+          ) : null}
           {result ? (
             <>
               <Metrics result={result} />
