@@ -3,6 +3,7 @@ import type {
   Customer,
   DatasetResponse,
   InvestigationResponse,
+  ModelMetadata,
   RiskFinding,
   ToolName,
   Transaction,
@@ -14,6 +15,7 @@ import {
   ArrowRight,
   BarChart3,
   Bell,
+  BrainCircuit,
   Check,
   ChevronRight,
   CircleDot,
@@ -77,6 +79,7 @@ const NAV_ITEMS = [
 }>;
 
 const SYSTEM_NAV_ITEMS = [
+  { id: "model", label: "Model intelligence", icon: BrainCircuit },
   { id: "audit", label: "Audit trail", icon: GitBranch },
   { id: "policy", label: "Policy settings", icon: Settings },
 ] satisfies Array<{
@@ -176,7 +179,7 @@ export function App() {
           return next;
         });
         appendAudit({
-          actor: "Devesh Singhal",
+          actor: "Ankit Marik",
           action: "Investigation completed",
           detail: `${response.investigationId}: “${nextQuery}” produced ${response.findings.length} explainable findings using ${response.plan.steps.length} tools.`,
           category: "investigation",
@@ -234,7 +237,7 @@ export function App() {
       });
       setDatasetName(file.name);
       appendAudit({
-        actor: "Devesh Singhal",
+        actor: "Ankit Marik",
         action: "Dataset imported",
         detail: `${file.name} activated with ${transactions.length} transactions across ${customers.length} customers.`,
         category: "dataset",
@@ -279,7 +282,7 @@ export function App() {
       [findingReviewKey(finding)]: status,
     }));
     appendAudit({
-      actor: "Devesh Singhal",
+      actor: "Ankit Marik",
       action: `Review ${status.replaceAll("_", " ")}`,
       detail: `${finding.customerId} (${finding.pattern.replaceAll("_", " ")}) changed to ${status.replaceAll("_", " ")}.`,
       category: "review",
@@ -294,7 +297,7 @@ export function App() {
       setImportedTransactions([]);
       setImportedCustomers([]);
       appendAudit({
-        actor: "Devesh Singhal",
+        actor: "Ankit Marik",
         action: "Synthetic dataset restored",
         detail: `${sample.transactions.length} transactions and ${sample.customers.length} customers are active.`,
         category: "dataset",
@@ -312,7 +315,7 @@ export function App() {
   const applyPolicy = (nextPolicy: AmlPolicy) => {
     setPolicy(nextPolicy);
     appendAudit({
-      actor: "Devesh Singhal",
+      actor: "Ankit Marik",
       action: "AML policy updated",
       detail: `Risk bands set to ${nextPolicy.mediumRiskThreshold}/${nextPolicy.highRiskThreshold}; escalation gates set to ${nextPolicy.reviewThreshold}/${nextPolicy.reportThreshold}.`,
       category: "policy",
@@ -405,9 +408,9 @@ export function App() {
         </div>
 
         <div className="analyst-card">
-          <div className="avatar">DS</div>
+          <div className="avatar">AM</div>
           <div>
-            <strong>Devesh Singhal</strong>
+            <strong>Ankit Marik</strong>
             <span>AML analyst</span>
           </div>
           <ChevronRight size={16} />
@@ -537,6 +540,10 @@ export function App() {
             </div>
           </section>
 
+          {result ? (
+            <ModelPulse model={result.model} onOpen={() => navigate("model")} />
+          ) : null}
+
           {error ? (
             <section className="error-state" role="alert">
               <AlertTriangle size={20} />
@@ -623,6 +630,41 @@ export function App() {
         </footer>
       </div>
     </div>
+  );
+}
+
+function ModelPulse({
+  model,
+  onOpen,
+}: {
+  model: ModelMetadata;
+  onOpen: () => void;
+}) {
+  return (
+    <section className="model-pulse" aria-label="Active trained model">
+      <div className="model-pulse__identity">
+        <span className="model-pulse__icon"><BrainCircuit size={18} /></span>
+        <div>
+          <span>Trained intelligence</span>
+          <strong>{model.type}</strong>
+        </div>
+      </div>
+      <div className="model-pulse__metric">
+        <span>Test PR-AUC</span>
+        <strong>{(model.metrics.prAuc * 100).toFixed(1)}%</strong>
+      </div>
+      <div className="model-pulse__metric">
+        <span>Test precision</span>
+        <strong>{(model.metrics.precision * 100).toFixed(1)}%</strong>
+      </div>
+      <div className="model-pulse__metric">
+        <span>Training scale</span>
+        <strong>{(model.datasetTransactions / 1_000_000).toFixed(2)}M</strong>
+      </div>
+      <button className="model-pulse__action" type="button" onClick={onOpen}>
+        View model card <ArrowRight size={14} />
+      </button>
+    </section>
   );
 }
 

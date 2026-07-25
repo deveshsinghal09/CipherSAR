@@ -38,15 +38,17 @@ assigning low/medium/high risk and monitor/review/report recommendations.
 
 Financial transaction amounts are skewed and heavy-tailed. Mean and standard deviation can be distorted by the same extreme values being detected. CipherSAR therefore uses the median and median absolute deviation where population-relative anomaly signals are needed.
 
-The application is training-free by design:
+The broad-anomaly tool is a hybrid ensemble:
 
-- no labelled AML data is required;
-- baseline calculations adapt to the supplied dataset;
-- deterministic rules remain transparent;
-- demo behavior is repeatable;
-- judges can inspect every score contribution.
+- robust baselines adapt to the supplied dataset;
+- deterministic rules preserve clear typology evidence;
+- a balanced random forest adds learned account-network behavior;
+- model probability and leading features remain visible to judges;
+- direct aggregation and targeted queries still skip ML when it is unnecessary.
 
-An optional Isolation Forest or autoencoder can be added behind `detect_general_anomalies` later, but should be validated independently and must not replace clear typology evidence.
+Offline training compares a class-weighted logistic baseline and a balanced random forest using validation PR-AUC. The selected forest is exported to JSON and evaluated inside Node.js, so production runtime does not depend on Python or a separate inference service.
+
+Runtime inference has an explicit applicability gate: at least 20 transactions and an 80% wire-transfer share. This prevents a transfer-network model from being applied indiscriminately to mixed retail card/cash histories.
 
 ## Risk model
 
@@ -64,6 +66,8 @@ The final score is capped at 100. Risk bands are:
 - high: report recommendation after authorized review.
 
 Exact thresholds are demo defaults and are intentionally centralized in detector logic for later institution-specific configuration.
+
+The trained model uses its own validation-selected probability threshold before it becomes a candidate. Candidate probability, threshold, and leading model features are then translated into the same evidence and policy contracts as the rules. See `docs/MODEL_CARD.md`.
 
 ## Safety properties
 
@@ -96,4 +100,7 @@ Before production use:
 - `apps/api/src/agent/engine.ts`
 - `apps/api/src/domain/features.ts`
 - `apps/api/src/domain/detectors.ts`
+- `apps/api/src/ml/model.ts`
+- `apps/api/src/ml/aml-account-risk-v1.json`
+- `ml/train.py`
 - `packages/shared/src/types.ts`

@@ -4,6 +4,7 @@ import {
   type Customer,
   type DatasetResponse,
   type InvestigationResponse,
+  type ModelMetadata,
   type RiskFinding,
   type Transaction,
 } from "@ciphersar/shared";
@@ -11,6 +12,7 @@ import {
   Activity,
   AlertTriangle,
   ArrowRight,
+  BrainCircuit,
   Check,
   Clock3,
   Database,
@@ -35,6 +37,7 @@ export type WorkspaceView =
   | "customers"
   | "transactions"
   | "datasets"
+  | "model"
   | "audit"
   | "policy";
 
@@ -111,6 +114,8 @@ export function WorkspaceViews(props: WorkspaceViewsProps) {
           onReset={props.onResetDataset}
         />
       );
+    case "model":
+      return <ModelIntelligenceView model={props.result?.model ?? null} />;
     case "audit":
       return <AuditTrailView events={props.auditEvents} />;
     case "policy":
@@ -121,6 +126,110 @@ export function WorkspaceViews(props: WorkspaceViewsProps) {
         />
       );
   }
+}
+
+function ModelIntelligenceView({ model }: { model: ModelMetadata | null }) {
+  if (!model) {
+    return (
+      <div className="workspace-view">
+        <ViewHeader
+          eyebrow="Hybrid intelligence"
+          title="Model intelligence"
+          description="Validated model performance, training provenance, and governance controls."
+          icon={BrainCircuit}
+        />
+        <section className="panel">
+          <Empty
+            icon={BrainCircuit}
+            title="Model metadata is loading"
+            detail="Run an investigation to load the active model card."
+          />
+        </section>
+      </div>
+    );
+  }
+  const metrics = [
+    ["Test precision", model.metrics.precision, "Relevant alerts"],
+    ["Test recall", model.metrics.recall, "Detected positives"],
+    ["PR-AUC", model.metrics.prAuc, "Imbalanced quality"],
+    ["ROC-AUC", model.metrics.rocAuc, "Ranking quality"],
+  ] as const;
+  const maxImportance = Math.max(
+    0.01,
+    ...model.topFeatures.map((feature) => feature.importance),
+  );
+  return (
+    <div className="workspace-view">
+      <ViewHeader
+        eyebrow="Hybrid intelligence"
+        title="Model intelligence"
+        description="Transparent performance, provenance, and decision-support controls for the active AML model."
+        icon={BrainCircuit}
+        action={<span className="model-live"><i /> Active · v1</span>}
+      />
+      <section className="model-hero panel">
+        <div className="model-hero__mark"><BrainCircuit size={28} /></div>
+        <div>
+          <span className="section-kicker">Production artifact</span>
+          <h2>{model.type}</h2>
+          <p>{model.id}</p>
+        </div>
+        <div className="model-threshold">
+          <span>Decision threshold</span>
+          <strong>{Math.round(model.decisionThreshold * 100)}%</strong>
+          <small>Validated F1 {Math.round(model.metrics.f1 * 100)}%</small>
+        </div>
+      </section>
+      <section className="model-metric-grid">
+        {metrics.map(([label, value, note]) => (
+          <article className="panel model-metric" key={label}>
+            <span>{label}</span>
+            <strong>{(value * 100).toFixed(1)}%</strong>
+            <small>{note}</small>
+          </article>
+        ))}
+      </section>
+      <section className="model-layout">
+        <article className="panel model-features">
+          <header className="panel__header">
+            <div>
+              <span className="section-kicker">Explainability</span>
+              <h2>Leading model features</h2>
+            </div>
+          </header>
+          <div className="model-feature-list">
+            {model.topFeatures.map((feature, index) => (
+              <div key={feature.feature}>
+                <em>{String(index + 1).padStart(2, "0")}</em>
+                <span>{feature.feature.replaceAll("_", " ")}</span>
+                <div><i style={{ width: `${(feature.importance / maxImportance) * 100}%` }} /></div>
+                <strong>{(feature.importance * 100).toFixed(1)}%</strong>
+              </div>
+            ))}
+          </div>
+        </article>
+        <article className="panel model-governance">
+          <header className="panel__header">
+            <div>
+              <span className="section-kicker">Training provenance</span>
+              <h2>Validated and governed</h2>
+            </div>
+            <ShieldCheck size={20} />
+          </header>
+          <dl>
+            <div><dt>Dataset</dt><dd>{model.dataset}</dd></div>
+            <div><dt>Training accounts</dt><dd>{model.datasetAccounts.toLocaleString()}</dd></div>
+            <div><dt>Transactions</dt><dd>{model.datasetTransactions.toLocaleString()}</dd></div>
+            <div><dt>Model role</dt><dd>Decision support</dd></div>
+          </dl>
+          <div className="governance-note">
+            <AlertTriangle size={16} />
+            <p>Synthetic training data cannot establish criminal intent. Every escalation requires analyst review and institution-specific validation.</p>
+          </div>
+        </article>
+      </section>
+    </div>
+  );
 }
 
 function ViewHeader({
