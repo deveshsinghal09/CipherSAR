@@ -148,6 +148,22 @@ export interface InvestigationMetrics {
   executionTimeMs: number;
 }
 
+export interface AmlPolicy {
+  mediumRiskThreshold: number;
+  highRiskThreshold: number;
+  reviewThreshold: number;
+  reportThreshold: number;
+  minimumReportConfidence: number;
+}
+
+export const DEFAULT_AML_POLICY: AmlPolicy = {
+  mediumRiskThreshold: 35,
+  highRiskThreshold: 70,
+  reviewThreshold: 60,
+  reportThreshold: 85,
+  minimumReportConfidence: 0.75,
+};
+
 export interface InvestigationResponse {
   investigationId: string;
   generatedAt: string;
@@ -162,10 +178,43 @@ export interface InvestigationResponse {
     modelRole: "decision_support";
     limitations: string[];
   };
+  policy: AmlPolicy;
+  model: ModelMetadata;
+}
+
+export interface ModelMetricSummary {
+  precision: number;
+  recall: number;
+  f1: number;
+  prAuc: number;
+  rocAuc: number;
+}
+
+export interface ModelMetadata {
+  id: string;
+  type: string;
+  status: "active";
+  trainedAt: string;
+  dataset: string;
+  datasetAccounts: number;
+  datasetTransactions: number;
+  decisionThreshold: number;
+  metrics: ModelMetricSummary;
+  topFeatures: Array<{ feature: string; importance: number }>;
+  role: "decision_support";
 }
 
 export interface AnalyzeRequest {
   query: string;
   transactions?: Transaction[] | undefined;
   customers?: Customer[] | undefined;
+  policy?: AmlPolicy | undefined;
+}
+
+export interface DatasetResponse {
+  name: string;
+  source: string;
+  customers: Customer[];
+  transactions: Transaction[];
+  knownDemoPatterns: AmlPattern[];
 }

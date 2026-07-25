@@ -1,10 +1,13 @@
 import type {
+  AmlPolicy,
   AmlPattern,
   FeatureContribution,
   RiskFinding,
   Transaction,
 } from "@ciphersar/shared";
+import { DEFAULT_AML_POLICY } from "@ciphersar/shared";
 import type { CustomerFeatures } from "./features";
+import { scoreCustomerWithModel } from "../ml/model";
 import { clamp, round } from "./statistics";
 
 export interface DetectorCandidate {
@@ -30,8 +33,8 @@ export function detectRequestedPattern(
 export function detectHybridAnomalies(
   features: CustomerFeatures[],
 ): DetectorCandidate[] {
-  const candidates = features.flatMap((feature) =>
-    (
+  const candidates = features.flatMap((feature) => {
+    const ruleCandidates = (
       [
         "structuring",
         "smurfing",
@@ -43,8 +46,10 @@ export function detectHybridAnomalies(
     ).flatMap((pattern) => {
       const candidate = detectOne(feature, pattern);
       return candidate ? [candidate] : [];
-    }),
-  );
+    });
+    const modelCandidate = detectTrainedModelAnomaly(feature);
+    return modelCandidate ? [...ruleCandidates, modelCandidate] : ruleCandidates;
+  });
 
   const strongest = new Map<string, DetectorCandidate>();
   for (const candidate of candidates) {
@@ -57,6 +62,27 @@ export function detectHybridAnomalies(
     }
   }
   return [...strongest.values()];
+}
+
+function detectTrainedModelAnomaly(
+  feature: CustomerFeatures,
+): DetectorCandidate | undefined {
+  const model = scoreCustomerWithModel(feature);
+  if (!model.applicable || !model.flagged) return undefined;
+  const probabilityPercent = round(model.probability * 100, 1);
+  return {
+    customerId: feature.customerId,
+    pattern: "general_anomaly",
+    confidence: model.probability,
+    aggregateAmount: feature.totalAmount,
+    transactions: feature.transactions,
+    evidence: [
+      `${probabilityPercent}% probability from the trained AMLSim account model`,
+      `${feature.transactionCount} transactions across ${feature.counterpartyCount} counterparties`,
+      `model threshold ${round(model.threshold * 100, 1)}%`,
+    ],
+    contributions: model.contributions,
+  };
 }
 
 function detectOne(
@@ -306,6 +332,7 @@ export function scoreCandidates(
 
 export function toFinding(
   candidateValue: DetectorCandidate & { riskScore: number },
+  policy: AmlPolicy = DEFAULT_AML_POLICY,
 ): RiskFinding {
   const sorted = [...candidateValue.transactions].sort((a, b) =>
     a.timestamp.localeCompare(b.timestamp),
@@ -313,15 +340,16 @@ export function toFinding(
   const first = sorted[0]?.timestamp ?? new Date(0).toISOString();
   const last = sorted.at(-1)?.timestamp ?? first;
   const riskLevel =
-    candidateValue.riskScore >= 70
+    candidateValue.riskScore >= policy.highRiskThreshold
       ? "high"
-      : candidateValue.riskScore >= 35
+      : candidateValue.riskScore >= policy.mediumRiskThreshold
         ? "medium"
         : "low";
   const action =
-    candidateValue.riskScore >= 85 && candidateValue.confidence >= 0.75
+    candidateValue.riskScore >= policy.reportThreshold &&
+    candidateValue.confidence >= policy.minimumReportConfidence
       ? "report"
-      : candidateValue.riskScore >= 60
+      : candidateValue.riskScore >= policy.reviewThreshold
         ? "review"
         : "monitor";
   const patternLabel = candidateValue.pattern.replaceAll("_", " ");
@@ -345,4 +373,3 @@ export function toFinding(
     transactionIds: candidateValue.transactions.map((item) => item.id),
   };
 }
-

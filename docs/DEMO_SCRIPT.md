@@ -47,7 +47,7 @@ Run:
 Analyse this dataset for suspicious activity
 ```
 
-Show selective EDA, multiple typologies, risk distribution, and data-quality summary.
+Show selective EDA, multiple typologies, trained-model evidence, risk distribution, and data-quality summary. Open **Model intelligence** and show the holdout metrics, leading features, training scale, and decision-support limitation.
 
 ## 6. Data portability and governance — 45 seconds
 
@@ -65,7 +65,7 @@ Show selective EDA, multiple typologies, risk distribution, and data-quality sum
 Yes. The query parser and planner choose tools and sequence per request. The returned plan trace proves which tools were run and skipped.
 
 **Did you train a model?**  
-No labelled training is required. The hybrid detector combines explainable AML rules with an unsupervised robust baseline calculated from the current dataset.
+Yes. The selected balanced random forest was trained on 10,000 labelled IBM AMLSim accounts and 1,323,234 transactions. On the untouched test set it achieved 99.4% precision, 67.9% recall, 89.2% PR-AUC, and 95.1% ROC-AUC. CipherSAR still skips ML for direct threshold questions and retains explainable rules for known typologies.
 
 **Can this file reports automatically?**  
 No. Recommendations are advisory; an authorized human must review and approve escalation.

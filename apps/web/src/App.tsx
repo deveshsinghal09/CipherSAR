@@ -1,15 +1,21 @@
 import type {
+  AmlPolicy,
+  Customer,
+  DatasetResponse,
   InvestigationResponse,
+  ModelMetadata,
   RiskFinding,
   ToolName,
   Transaction,
 } from "@ciphersar/shared";
+import { DEFAULT_AML_POLICY } from "@ciphersar/shared";
 import {
   Activity,
   AlertTriangle,
   ArrowRight,
   BarChart3,
   Bell,
+  BrainCircuit,
   Check,
   ChevronRight,
   CircleDot,
@@ -41,7 +47,15 @@ import {
   useRef,
   useState,
 } from "react";
-import { runInvestigation } from "./api";
+import { getDataset, runInvestigation } from "./api";
+import {
+  type AuditEvent,
+  customersFromTransactions,
+  findingReviewKey,
+  type ReviewStatus,
+  type WorkspaceView,
+  WorkspaceViews,
+} from "./workspace-views";
 
 const DEFAULT_QUERY = "Find structuring patterns in the last 30 days";
 const EXAMPLES = [
@@ -52,13 +66,27 @@ const EXAMPLES = [
 ];
 
 const NAV_ITEMS = [
-  { label: "Command center", icon: LayoutDashboard, active: true },
-  { label: "Investigations", icon: FileSearch },
-  { label: "Review queue", icon: FileCheck2, count: 18 },
-  { label: "Customers", icon: Users },
-  { label: "Transactions", icon: Activity },
-  { label: "Datasets", icon: Database },
-];
+  { id: "command", label: "Command center", icon: LayoutDashboard },
+  { id: "investigations", label: "Investigations", icon: FileSearch },
+  { id: "review", label: "Review queue", icon: FileCheck2 },
+  { id: "customers", label: "Customers", icon: Users },
+  { id: "transactions", label: "Transactions", icon: Activity },
+  { id: "datasets", label: "Datasets", icon: Database },
+] satisfies Array<{
+  id: WorkspaceView;
+  label: string;
+  icon: typeof Activity;
+}>;
+
+const SYSTEM_NAV_ITEMS = [
+  { id: "model", label: "Model intelligence", icon: BrainCircuit },
+  { id: "audit", label: "Audit trail", icon: GitBranch },
+  { id: "policy", label: "Policy settings", icon: Settings },
+] satisfies Array<{
+  id: WorkspaceView;
+  label: string;
+  icon: typeof Activity;
+}>;
 
 const TOOL_LABELS: Record<ToolName, string> = {
   load_dataset: "Load dataset",
@@ -82,15 +110,72 @@ export function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [activeView, setActiveView] = useState<WorkspaceView>("command");
   const [importedTransactions, setImportedTransactions] = useState<Transaction[]>([]);
+  const [importedCustomers, setImportedCustomers] = useState<Customer[]>([]);
+  const [dataset, setDataset] = useState<DatasetResponse | null>(null);
+  const [datasetLoading, setDatasetLoading] = useState(true);
+  const [datasetError, setDatasetError] = useState<string | null>(null);
   const [datasetName, setDatasetName] = useState("Global retail transactions");
+  const [history, setHistory] = useState<InvestigationResponse[]>([]);
+  const [reviewStates, setReviewStates] = useState<Record<string, ReviewStatus>>(
+    {},
+  );
+  const [policy, setPolicy] = useState<AmlPolicy>(DEFAULT_AML_POLICY);
+  const [auditEvents, setAuditEvents] = useState<AuditEvent[]>([
+    {
+      id: "AUD-BOOT",
+      occurredAt: new Date().toISOString(),
+      actor: "CipherSAR",
+      action: "Workspace initialized",
+      detail: "Decision-support controls and the synthetic dataset were activated.",
+      category: "system",
+    },
+  ]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const hasBootstrapped = useRef(false);
+
+  const appendAudit = useCallback(
+    (event: Omit<AuditEvent, "id" | "occurredAt">) => {
+      setAuditEvents((current) => [
+        {
+          ...event,
+          id: `AUD-${crypto.randomUUID().slice(0, 8).toUpperCase()}`,
+          occurredAt: new Date().toISOString(),
+        },
+        ...current,
+      ]);
+    },
+    [],
+  );
+
+  const loadDataset = useCallback(async (): Promise<DatasetResponse | null> => {
+    setDatasetLoading(true);
+    setDatasetError(null);
+    try {
+      const sample = await getDataset();
+      setDataset(sample);
+      setDatasetName("Global retail transactions");
+      return sample;
+    } catch (caught) {
+      setDataset(null);
+      setDatasetError(
+        caught instanceof Error
+          ? caught.message
+          : "The active dataset could not be loaded.",
+      );
+      return null;
+    } finally {
+      setDatasetLoading(false);
+    }
+  }, []);
 
   const investigate = useCallback(
     async (
       nextQuery: string,
       transactions: Transaction[] = importedTransactions,
+      customers: Customer[] = importedCustomers,
+      effectivePolicy: AmlPolicy = policy,
     ) => {
       setLoading(true);
       setError(null);
@@ -98,23 +183,50 @@ export function App() {
         const response = await runInvestigation({
           query: nextQuery,
           ...(transactions.length ? { transactions } : {}),
+          ...(transactions.length && customers.length ? { customers } : {}),
+          policy: effectivePolicy,
         });
         setResult(response);
         setSelectedId(response.findings[0]?.entityId ?? null);
+        setHistory((current) => [
+          response,
+          ...current.filter(
+            (item) => item.investigationId !== response.investigationId,
+          ),
+        ].slice(0, 50));
+        setReviewStates((current) => {
+          const next = { ...current };
+          for (const finding of response.findings) {
+            next[findingReviewKey(finding)] ??= "pending";
+          }
+          return next;
+        });
+        appendAudit({
+          actor: "Ankit Marik",
+          action: "Investigation completed",
+          detail: `${response.investigationId}: “${nextQuery}” produced ${response.findings.length} explainable findings using ${response.plan.steps.length} tools.`,
+          category: "investigation",
+        });
       } catch (caught) {
         setError(caught instanceof Error ? caught.message : "Unexpected error");
       } finally {
         setLoading(false);
       }
     },
-    [importedTransactions],
+    [
+      appendAudit,
+      importedCustomers,
+      importedTransactions,
+      policy,
+    ],
   );
 
   useEffect(() => {
     if (hasBootstrapped.current) return;
     hasBootstrapped.current = true;
-    void investigate(DEFAULT_QUERY, []);
-  }, [investigate]);
+    void loadDataset();
+    void investigate(DEFAULT_QUERY, [], []);
+  }, [investigate, loadDataset]);
 
   const selected = useMemo(
     () =>
@@ -134,9 +246,26 @@ export function App() {
     if (!file) return;
     try {
       const transactions = parseTransactionsCsv(await file.text());
+      const customers = customersFromTransactions(transactions);
       setImportedTransactions(transactions);
+      setImportedCustomers(customers);
+      setDataset({
+        name: file.name,
+        source: "Analyst-imported CSV validated in the browser and API",
+        transactions,
+        customers,
+        knownDemoPatterns: [],
+      });
+      setDatasetError(null);
+      setDatasetLoading(false);
       setDatasetName(file.name);
-      await investigate(query, transactions);
+      appendAudit({
+        actor: "Ankit Marik",
+        action: "Dataset imported",
+        detail: `${file.name} activated with ${transactions.length} transactions across ${customers.length} customers.`,
+        category: "dataset",
+      });
+      await investigate(query, transactions, customers);
     } catch (caught) {
       setError(
         caught instanceof Error
@@ -147,6 +276,96 @@ export function App() {
       event.target.value = "";
     }
   };
+
+  const navigate = (view: WorkspaceView) => {
+    setActiveView(view);
+    setMobileNavOpen(false);
+  };
+
+  const openInvestigation = (investigation: InvestigationResponse) => {
+    setResult(investigation);
+    setSelectedId(investigation.findings[0]?.entityId ?? null);
+    setQuery(investigation.parsedQuery.raw);
+    navigate("command");
+  };
+
+  const investigateCustomer = (customerId: string) => {
+    const nextQuery = `Is customer ID ${customerId} suspicious?`;
+    setQuery(nextQuery);
+    navigate("command");
+    void investigate(nextQuery);
+  };
+
+  const changeReviewStatus = (
+    finding: RiskFinding,
+    status: ReviewStatus,
+  ) => {
+    setReviewStates((current) => ({
+      ...current,
+      [findingReviewKey(finding)]: status,
+    }));
+    appendAudit({
+      actor: "Ankit Marik",
+      action: `Review ${status.replaceAll("_", " ")}`,
+      detail: `${finding.customerId} (${finding.pattern.replaceAll("_", " ")}) changed to ${status.replaceAll("_", " ")}.`,
+      category: "review",
+    });
+  };
+
+  const resetDataset = async () => {
+    try {
+      const sample = await loadDataset();
+      if (!sample) return;
+      setImportedTransactions([]);
+      setImportedCustomers([]);
+      appendAudit({
+        actor: "Ankit Marik",
+        action: "Synthetic dataset restored",
+        detail: `${sample.transactions.length} transactions and ${sample.customers.length} customers are active.`,
+        category: "dataset",
+      });
+      await investigate(DEFAULT_QUERY, [], []);
+    } catch (caught) {
+      setError(
+        caught instanceof Error
+          ? caught.message
+          : "The synthetic dataset could not be restored.",
+      );
+    }
+  };
+
+  const applyPolicy = (nextPolicy: AmlPolicy) => {
+    setPolicy(nextPolicy);
+    appendAudit({
+      actor: "Ankit Marik",
+      action: "AML policy updated",
+      detail: `Risk bands set to ${nextPolicy.mediumRiskThreshold}/${nextPolicy.highRiskThreshold}; escalation gates set to ${nextPolicy.reviewThreshold}/${nextPolicy.reportThreshold}.`,
+      category: "policy",
+    });
+    void investigate(
+      query,
+      importedTransactions,
+      importedCustomers,
+      nextPolicy,
+    );
+  };
+
+  const reviewFindings = useMemo(() => {
+    const unique = new Map<string, RiskFinding>();
+    for (const investigation of history) {
+      for (const finding of investigation.findings) {
+        unique.set(findingReviewKey(finding), finding);
+      }
+    }
+    return [...unique.values()].sort(
+      (left, right) => right.riskScore - left.riskScore,
+    );
+  }, [history]);
+
+  const openReviewCount = reviewFindings.filter(
+    (finding) =>
+      (reviewStates[findingReviewKey(finding)] ?? "pending") !== "resolved",
+  ).length;
 
   return (
     <div className="app-shell">
@@ -170,26 +389,34 @@ export function App() {
 
         <nav aria-label="Primary navigation">
           <span className="nav-heading">Workspace</span>
-          {NAV_ITEMS.map(({ label, icon: Icon, active, count }) => (
+          {NAV_ITEMS.map(({ id, label, icon: Icon }) => (
             <button
-              className={`nav-item ${active ? "nav-item--active" : ""}`}
-              key={label}
+              className={`nav-item ${activeView === id ? "nav-item--active" : ""}`}
+              key={id}
               type="button"
+              aria-current={activeView === id ? "page" : undefined}
+              onClick={() => navigate(id)}
             >
               <Icon size={18} />
               <span>{label}</span>
-              {count ? <em>{count}</em> : null}
+              {id === "review" && openReviewCount ? (
+                <em>{openReviewCount}</em>
+              ) : null}
             </button>
           ))}
           <span className="nav-heading nav-heading--spaced">System</span>
-          <button className="nav-item" type="button">
-            <GitBranch size={18} />
-            <span>Audit trail</span>
-          </button>
-          <button className="nav-item" type="button">
-            <Settings size={18} />
-            <span>Policy settings</span>
-          </button>
+          {SYSTEM_NAV_ITEMS.map(({ id, label, icon: Icon }) => (
+            <button
+              className={`nav-item ${activeView === id ? "nav-item--active" : ""}`}
+              key={id}
+              type="button"
+              aria-current={activeView === id ? "page" : undefined}
+              onClick={() => navigate(id)}
+            >
+              <Icon size={18} />
+              <span>{label}</span>
+            </button>
+          ))}
         </nav>
 
         <div className="security-card">
@@ -203,9 +430,9 @@ export function App() {
         </div>
 
         <div className="analyst-card">
-          <div className="avatar">DS</div>
+          <div className="avatar">AM</div>
           <div>
-            <strong>Devesh Singhal</strong>
+            <strong>Ankit Marik</strong>
             <span>AML analyst</span>
           </div>
           <ChevronRight size={16} />
@@ -235,15 +462,23 @@ export function App() {
               <span>Active dataset</span>
               <strong>{datasetName}</strong>
             </div>
-            <span className="live-dot">Live</span>
+            <span
+              className={`live-dot ${datasetError ? "live-dot--error" : ""}`}
+            >
+              {datasetLoading ? "Loading" : datasetError ? "Unavailable" : "Live"}
+            </span>
           </div>
           <div className="topbar__actions">
             <span className="sync-status">
               <RefreshCw size={14} /> Synced 2m ago
             </span>
-            <button className="icon-button" aria-label="Notifications">
+            <button
+              className="icon-button"
+              aria-label="Open review queue"
+              onClick={() => navigate("review")}
+            >
               <Bell size={18} />
-              <i />
+              {openReviewCount ? <i /> : null}
             </button>
             <input
               ref={fileInputRef}
@@ -263,6 +498,8 @@ export function App() {
         </header>
 
         <main>
+          {activeView === "command" ? (
+            <>
           <section className="page-intro">
             <div>
               <span className="eyebrow">
@@ -329,6 +566,10 @@ export function App() {
             </div>
           </section>
 
+          {result ? (
+            <ModelPulse model={result.model} onOpen={() => navigate("model")} />
+          ) : null}
+
           {error ? (
             <section className="error-state" role="alert">
               <AlertTriangle size={20} />
@@ -339,7 +580,10 @@ export function App() {
               <button
                 type="button"
                 className="button button--quiet"
-                onClick={() => void investigate(query)}
+                onClick={() => {
+                  if (!dataset) void loadDataset();
+                  void investigate(query);
+                }}
               >
                 Retry
               </button>
@@ -362,12 +606,42 @@ export function App() {
                   selectedId={selected?.entityId ?? null}
                   onSelect={setSelectedId}
                 />
-                <EvidencePanel finding={selected} />
+                <EvidencePanel
+                  finding={selected}
+                  onSendToReview={(finding) => {
+                    changeReviewStatus(finding, "in_review");
+                    navigate("review");
+                  }}
+                />
               </section>
 
               {result.eda ? <EdaPanel result={result} /> : null}
             </>
           ) : null}
+            </>
+          ) : (
+            <WorkspaceViews
+              activeView={activeView}
+              history={history}
+              result={result}
+              reviewFindings={reviewFindings}
+              dataset={dataset}
+              datasetName={datasetName}
+              datasetLoading={datasetLoading}
+              datasetError={datasetError}
+              imported={importedTransactions.length > 0}
+              reviewStates={reviewStates}
+              policy={policy}
+              auditEvents={auditEvents}
+              onOpenInvestigation={openInvestigation}
+              onInvestigateCustomer={investigateCustomer}
+              onReviewStatus={changeReviewStatus}
+              onImport={() => fileInputRef.current?.click()}
+              onResetDataset={() => void resetDataset()}
+              onRetryDataset={() => void loadDataset()}
+              onApplyPolicy={applyPolicy}
+            />
+          )}
         </main>
 
         <footer>
@@ -388,6 +662,41 @@ export function App() {
         </footer>
       </div>
     </div>
+  );
+}
+
+function ModelPulse({
+  model,
+  onOpen,
+}: {
+  model: ModelMetadata;
+  onOpen: () => void;
+}) {
+  return (
+    <section className="model-pulse" aria-label="Active trained model">
+      <div className="model-pulse__identity">
+        <span className="model-pulse__icon"><BrainCircuit size={18} /></span>
+        <div>
+          <span>Trained intelligence</span>
+          <strong>{model.type}</strong>
+        </div>
+      </div>
+      <div className="model-pulse__metric">
+        <span>Test PR-AUC</span>
+        <strong>{(model.metrics.prAuc * 100).toFixed(1)}%</strong>
+      </div>
+      <div className="model-pulse__metric">
+        <span>Test precision</span>
+        <strong>{(model.metrics.precision * 100).toFixed(1)}%</strong>
+      </div>
+      <div className="model-pulse__metric">
+        <span>Training scale</span>
+        <strong>{(model.datasetTransactions / 1_000_000).toFixed(2)}M</strong>
+      </div>
+      <button className="model-pulse__action" type="button" onClick={onOpen}>
+        View model card <ArrowRight size={14} />
+      </button>
+    </section>
   );
 }
 
@@ -659,7 +968,13 @@ function FindingsTable({
   );
 }
 
-function EvidencePanel({ finding }: { finding: RiskFinding | null }) {
+function EvidencePanel({
+  finding,
+  onSendToReview,
+}: {
+  finding: RiskFinding | null;
+  onSendToReview: (finding: RiskFinding) => void;
+}) {
   if (!finding) {
     return (
       <aside className="panel evidence-panel empty-state">
@@ -717,8 +1032,18 @@ function EvidencePanel({ finding }: { finding: RiskFinding | null }) {
         <span>Window <strong>{dateSpan(finding)}</strong></span>
       </div>
       <div className="evidence-actions">
-        <button className="button button--quiet" type="button">Monitor</button>
-        <button className="button button--primary" type="button">
+        <button
+          className="button button--quiet"
+          type="button"
+          onClick={() => exportFindings([finding])}
+        >
+          Export
+        </button>
+        <button
+          className="button button--primary"
+          type="button"
+          onClick={() => onSendToReview(finding)}
+        >
           Send to review <ArrowRight size={16} />
         </button>
       </div>

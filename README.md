@@ -6,6 +6,20 @@ CipherSAR turns a compliance analyst's natural-language question into a query-sp
 
 The interface is presented as an internal Financial Crime Compliance workspace for the fictional **Veyra Bank**. CipherSAR is decision-support software: every escalation requires human review.
 
+## Operational workspace
+
+The sidebar modules are fully functional:
+
+- **Command center** runs natural-language AML investigations and exposes the dynamic tool trace.
+- **Investigations** records completed runs and reopens their exact findings and plans.
+- **Review queue** tracks pending, in-review, resolved, and reopened findings with audit events.
+- **Customers** searches the active population and starts single-entity investigations.
+- **Transactions** searches and filters activity, highlights linked evidence, and pivots to customer review.
+- **Datasets** imports validated CSV data, reports coverage, and restores the deterministic demo dataset.
+- **Model intelligence** exposes the active model, holdout metrics, leading features, dataset provenance, and governance limitations.
+- **Audit trail** records investigation, review, dataset, policy, and system events.
+- **Policy settings** changes the backend risk bands, escalation thresholds, and minimum report confidence for subsequent analysis.
+
 ## Why it exists
 
 Traditional AML systems often create large alert volumes through static rules. Investigators then spend time dismissing false positives while sophisticated structuring, smurfing, layering, velocity, and rapid cash-out behavior can cross multiple rules or channels.
@@ -15,7 +29,7 @@ CipherSAR addresses that problem with:
 - natural-language intent, entity, threshold, date, geography, segment, and transaction-type extraction;
 - a dynamic planner that skips irrelevant work instead of running a fixed pipeline;
 - on-demand AML feature engineering;
-- hybrid deterministic and robust statistical detection;
+- hybrid deterministic, robust statistical, and trained-model detection;
 - explainable 0–100 advisory risk scoring;
 - evidence-linked `monitor`, `review`, or `report` recommendations;
 - a visible execution trace showing what the agent ran, skipped, and why.
@@ -33,7 +47,7 @@ Every API response contains `parsedQuery`, `plan.steps`, `plan.skippedTools`, `m
 
 ## Detection approach
 
-CipherSAR does **not require a pre-trained model or labelled SAR data**. It learns the current dataset baseline at analysis time.
+CipherSAR uses a hybrid approach. Targeted rules remain the best tool for explicit typology or threshold questions, while broad investigations can invoke a trained account-risk model alongside robust population statistics.
 
 1. **Rules** identify known AML typologies:
    - structuring near a reporting threshold;
@@ -42,11 +56,14 @@ CipherSAR does **not require a pre-trained model or labelled SAR data**. It lear
    - unusual transaction velocity;
    - rapid cash-out after incoming funds.
 2. **Robust statistics** use median and median absolute deviation (MAD) to detect population-relative outliers without assuming a normal distribution.
-3. **Risk calibration** combines independent evidence contributions into a capped 0–100 score.
-4. **Explanation** preserves the underlying feature values and reasons that contributed to the score.
-5. **Action policy** maps the evidence to `monitor`, `review`, or `report`, while retaining mandatory human approval.
+3. **Supervised ML** uses a balanced random forest trained on IBM AMLSim account labels. The selected model is exported as portable JSON and evaluated directly by the Node.js API.
+4. **Risk calibration** combines independent evidence contributions into a capped 0–100 score.
+5. **Explanation** preserves observed feature values, model probability, and reasons that contributed to the score.
+6. **Action policy** maps the evidence to `monitor`, `review`, or `report`, while retaining mandatory human approval.
 
-This satisfies the challenge's ML/statistical/rule-based requirement while avoiding a misleading supervised model trained on synthetic labels.
+Model selection used validation PR-AUC to compare a class-weighted logistic baseline with a balanced random forest. The untouched 1,500-account test set produced 99.4% precision, 67.9% recall, 80.7% F1, 89.2% PR-AUC, and 95.1% ROC-AUC. These are synthetic-dataset results, not claims about production performance.
+
+To control domain shift, trained inference is gated to histories with at least 20 transactions and an 80% wire-transfer share. Incompatible mixed retail data remains with the rule/statistical layers instead of receiving a misleading model score.
 
 ## Architecture
 
@@ -58,7 +75,7 @@ flowchart LR
     D -->|"Threshold"| E["Direct aggregation"]
     D -->|"Pattern"| F["On-demand AML features"]
     D -->|"Customer"| G["Single-entity lookup"]
-    D -->|"Broad"| H["Selective EDA + hybrid ensemble"]
+    D -->|"Broad"| H["Selective EDA + rules + statistics + trained model"]
     E --> I["Risk calibration"]
     F --> I
     G --> I
@@ -76,13 +93,16 @@ apps/
   web/       React command center, CSV import, evidence export
 packages/
   shared/    Shared TypeScript request/response contracts
+ml/          Reproducible feature engineering, training, model selection
 docs/        Architecture, dataset schema, demo, and contribution guidance
 docker/      Production container definitions
 ```
 
 ## Dataset
 
-The repository includes a deterministic synthetic retail-banking generator with:
+The repository uses two synthetic data sources. The **IBM AMLSim Example Dataset** trains the supervised model with 10,000 labelled accounts, 1,323,234 transfer transactions, and 1,719 suspicious alerts across `fan_in` and `cycle` patterns. The Kaggle slug is `anshankul/ibm-amlsim-example-dataset`, licensed under Apache 2.0.
+
+The live judge experience uses a deterministic CipherSAR retail-banking generator with:
 
 - 35 customers across retail and business segments;
 - normal card, ACH, and wire activity;
@@ -90,19 +110,20 @@ The repository includes a deterministic synthetic retail-banking generator with:
 - customer `CUS-3108`: distributed small cash deposits across branches;
 - customer `CUS-8842`: fast inbound/outbound cross-border wire flows.
 
-No real customer or financial data is included. See [Dataset schema](docs/DATASET.md) and the ready-to-import [demo CSV](data/demo-transactions.csv).
+Raw Kaggle files are intentionally gitignored. No real customer or financial data is included. See [Dataset schema](docs/DATASET.md), [model card](docs/MODEL_CARD.md), and the ready-to-import [demo CSV](data/demo-transactions.csv).
 
 ## Tech stack
 
 - TypeScript with strict type checking
 - React 19 + Vite
 - Node.js + Express
+- Python 3.11, pandas, and scikit-learn for offline training
 - Zod request validation
 - Vitest + Supertest
 - Docker + Nginx
 - GitHub Actions
 
-The visual direction is derived from the repository's Superdesign design system: a high-contrast forensic command center with warm paper surfaces, ink typography, lime evidence accents, coral risk states, a persistent bank navigation shell, and clear human-control messaging.
+The interface is a responsive, high-contrast forensic command center with restrained bank branding, model-governance surfaces, clear risk states, a persistent navigation shell, and explicit human-control messaging.
 
 ## Local setup
 
@@ -124,6 +145,18 @@ npm run build
 npm run dev:api
 npm run dev:web
 ```
+
+### Reproduce model training
+
+Download and extract the [IBM AMLSim Example Dataset](https://www.kaggle.com/datasets/anshankul/ibm-amlsim-example-dataset/data) so its CSV files are under `data/raw/ibm-amlsim-example-dataset`, then run:
+
+```bash
+python -m venv .venv
+.venv/Scripts/python -m pip install -r ml/requirements.txt
+.venv/Scripts/python ml/train.py
+```
+
+On macOS/Linux, use `.venv/bin/python`. The command regenerates `apps/api/src/ml/aml-account-risk-v1.json` with a fixed seed, model-selection results, test metrics, feature importances, and portable decision trees.
 
 ## Usage
 
@@ -153,6 +186,8 @@ Endpoints:
 - `GET /api/health`
 - `GET /api/examples`
 - `GET /api/dataset/summary`
+- `GET /api/dataset`
+- `GET /api/model`
 - `POST /api/investigations`
 
 ## Docker
@@ -170,6 +205,7 @@ The automated suite covers:
 - query parsing and entity/filter extraction;
 - plan adaptation and tool skipping;
 - pattern detectors and risk scoring;
+- trained-model metadata and portable runtime inference;
 - end-to-end agent behavior;
 - API health, validation, and investigations.
 
@@ -181,22 +217,23 @@ CI runs install, strict type checks, all tests, and the production build on ever
 - Scores are advisory and must not autonomously file a SAR/STR.
 - Thresholds require institution-, product-, jurisdiction-, and segment-specific calibration.
 - A production deployment requires authentication, authorization, encryption, retention controls, monitoring, data-lineage controls, independent validation, and regulatory/legal review.
-- Synthetic patterns demonstrate system behavior; they do not establish real-world precision or recall.
+- Holdout metrics measure this particular synthetic AMLSim dataset only and do not establish real-world performance.
 
 See [Architecture and controls](docs/ARCHITECTURE.md) for the production-hardening path.
 
 ## Data sources
 
-- Transactions and customer records: deterministic synthetic data generated locally in `apps/api/src/data/sample-data.ts`.
+- Model training: [IBM AMLSim Example Dataset on Kaggle](https://www.kaggle.com/datasets/anshankul/ibm-amlsim-example-dataset/data), Apache 2.0.
+- Live demo transactions and customer records: deterministic synthetic data generated locally in `apps/api/src/data/sample-data.ts`.
 - AML pattern definitions: implemented from the challenge brief's structuring, smurfing, and layering examples and commonly understood transaction-monitoring concepts.
-- No external dataset, personal information, proprietary model, or third-party inference API is used.
+- No personal information, proprietary model, or third-party inference API is used at runtime.
 
 ## Contribution traceability
 
 All work must be committed from the contributor's own GitHub account. Do not rewrite authorship or commit another person's work under their name.
 
 - **Devesh Singhal** — repository owner and initial implementation.
-- **Ankit Kumar** — collaborator; contributions should be made through a feature branch and pull request from `AnkitKumar61`.
+- **Ankit Marik** — collaborator (`AnkitKumar61`); trained-model integration, model intelligence UI, evaluation, and associated documentation are developed on the current feature branch.
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) and [Contribution workflow](docs/CONTRIBUTIONS.md).
 

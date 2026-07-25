@@ -8,3 +8,8 @@ coverage/
 *.tsbuildinfo
 .DS_Store
 apps/api/data/uploads/
+.venv/
+data/raw/
+data/processed/
+__pycache__/
+*.py[cod]

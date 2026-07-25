@@ -20,6 +20,40 @@ describe("CipherSAR API", () => {
     expect(response.body.parsedQuery.intent).toBe("pattern_search");
     expect(response.body.plan.steps.length).toBeGreaterThan(4);
     expect(response.body.findings[0].explanation).toContain("analyst validation");
+    expect(response.body.policy.highRiskThreshold).toBe(70);
+  });
+
+  it("returns the synthetic dataset for workspace views", async () => {
+    const response = await request(app).get("/api/dataset");
+    expect(response.status).toBe(200);
+    expect(response.body.customers.length).toBeGreaterThan(30);
+    expect(response.body.transactions.length).toBeGreaterThan(100);
+  });
+
+  it("exposes the active trained model card", async () => {
+    const response = await request(app).get("/api/model");
+    expect(response.status).toBe(200);
+    expect(response.body.type).toBe("balanced random forest");
+    expect(response.body.dataset).toContain("AMLSim");
+    expect(response.body.metrics.prAuc).toBeGreaterThan(0.85);
+  });
+
+  it("applies validated policy thresholds to recommendations", async () => {
+    const response = await request(app)
+      .post("/api/investigations")
+      .send({
+        query: "Find structuring patterns in the last 30 days",
+        policy: {
+          mediumRiskThreshold: 20,
+          highRiskThreshold: 95,
+          reviewThreshold: 95,
+          reportThreshold: 100,
+          minimumReportConfidence: 1,
+        },
+      });
+    expect(response.status).toBe(200);
+    expect(response.body.findings[0].riskLevel).toBe("medium");
+    expect(response.body.findings[0].recommendedAction).toBe("monitor");
   });
 
   it("rejects malformed requests", async () => {

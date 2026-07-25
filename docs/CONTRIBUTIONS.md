@@ -30,6 +30,6 @@ Never manufacture commits with another contributor's name or email. Git history 
 ## Suggested task split
 
 - Devesh: adaptive planner, API, hybrid detector, integration, release.
-- Ankit: evaluation dataset, additional detector tests, accessibility review, or case-management feature.
+- Ankit Marik: IBM AMLSim training pipeline, portable inference integration, model evaluation, model intelligence UI, responsive QA, and model documentation.
 
 Record the final division in the pull request descriptions and hackathon submission.
