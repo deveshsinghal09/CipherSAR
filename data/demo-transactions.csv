@@ -1,0 +1,13 @@
+id,customer_id,timestamp,amount,currency,type,country,branch_id,counterparty_id,segment,channel
+DEMO-001,CUS-DEMO-77,2026-07-20T09:00:00.000Z,9250,USD,cash_deposit,US,BR-1,,retail,branch
+DEMO-002,CUS-DEMO-77,2026-07-20T12:00:00.000Z,9475,USD,cash_deposit,US,BR-2,,retail,branch
+DEMO-003,CUS-DEMO-77,2026-07-21T10:00:00.000Z,9650,USD,cash_deposit,US,BR-3,,retail,branch
+DEMO-004,CUS-DEMO-77,2026-07-21T14:00:00.000Z,9800,USD,cash_deposit,US,BR-1,,retail,branch
+DEMO-005,CUS-DEMO-77,2026-07-22T09:30:00.000Z,9350,USD,cash_deposit,US,BR-4,,retail,branch
+DEMO-006,CUS-DEMO-77,2026-07-22T15:00:00.000Z,9900,USD,cash_deposit,US,BR-2,,retail,branch
+DEMO-007,CUS-DEMO-77,2026-07-23T08:45:00.000Z,9525,USD,cash_deposit,US,BR-3,,retail,branch
+DEMO-008,CUS-DEMO-77,2026-07-23T13:15:00.000Z,9700,USD,cash_deposit,US,BR-1,,retail,branch
+DEMO-009,CUS-DEMO-77,2026-07-24T09:00:00.000Z,9400,USD,cash_deposit,US,BR-4,,retail,branch
+DEMO-010,CUS-DEMO-77,2026-07-24T16:00:00.000Z,9850,USD,cash_deposit,US,BR-2,,retail,branch
+DEMO-011,CUS-NORMAL-12,2026-07-21T11:00:00.000Z,185,USD,card,US,,CP-2,retail,online
+DEMO-012,CUS-NORMAL-12,2026-07-23T15:00:00.000Z,420,USD,ach,US,,CP-8,retail,online
