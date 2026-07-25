@@ -4,6 +4,12 @@ import type {
   InvestigationResponse,
 } from "@ciphersar/shared";
 
+const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? "").replace(/\/+$/, "");
+
+function apiUrl(path: string): string {
+  return `${API_BASE_URL}${path}`;
+}
+
 export async function runInvestigation(
   request: AnalyzeRequest,
   signal?: AbortSignal,
@@ -15,7 +21,7 @@ export async function runInvestigation(
   };
   if (signal) init.signal = signal;
 
-  const response = await fetch("/api/investigations", init);
+  const response = await fetch(apiUrl("/api/investigations"), init);
   const payload = await readJson(response);
   if (!response.ok) {
     const message =
@@ -35,7 +41,7 @@ export async function runInvestigation(
 
 export async function getDataset(signal?: AbortSignal): Promise<DatasetResponse> {
   const response = await fetch(
-    "/api/dataset",
+    apiUrl("/api/dataset"),
     signal ? { signal } : undefined,
   );
   const payload = await readJson(response);
