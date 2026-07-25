@@ -6,7 +6,7 @@ services:
     region: singapore
     branch: main
     autoDeploy: true
-    buildCommand: npm ci && npm run build -w @ciphersar/shared && npm run build -w @ciphersar/api
+    buildCommand: npm ci --include=dev && npm run build -w @ciphersar/shared && npm run build -w @ciphersar/api
     startCommand: npm run start -w @ciphersar/api
     healthCheckPath: /api/health
     envVars:
