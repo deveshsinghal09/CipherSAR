@@ -30,6 +30,7 @@ import {
 } from "lucide-react";
 import { type FormEvent, useMemo, useState } from "react";
 import { EmptyState as Empty } from "./components/ui";
+import { formatInr, localizeCurrencyText } from "./formatters";
 
 export type WorkspaceView =
   | "command"
@@ -490,11 +491,11 @@ function ReviewQueueView({
                       {finding.riskScore} · {finding.riskLevel}
                     </span>
                   </div>
-                  <p>{finding.explanation}</p>
+                  <p>{localizeCurrencyText(finding.explanation)}</p>
                   <div className="review-card__facts">
                     <span>{finding.transactionCount} transactions</span>
                     <span>
-                      ${finding.aggregateAmount.toLocaleString("en-US")} activity
+                      {formatInr(finding.aggregateAmount)} activity
                     </span>
                     <span>{Math.round(finding.confidence * 100)}% confidence</span>
                   </div>
@@ -625,7 +626,7 @@ function CustomersView({
                       </td>
                       <td data-label="Volume">
                         <strong>
-                          ${(summary?.volume ?? 0).toLocaleString("en-US")}
+                          {formatInr(summary?.volume ?? 0)}
                         </strong>
                         <span>aggregate</span>
                       </td>
@@ -763,8 +764,7 @@ function TransactionsView({
                     </td>
                     <td data-label="Amount">
                       <strong>
-                        {transaction.currency}{" "}
-                        {transaction.amount.toLocaleString("en-US")}
+                        {formatInr(transaction.amount)}
                       </strong>
                     </td>
                     <td data-label="Location / channel">

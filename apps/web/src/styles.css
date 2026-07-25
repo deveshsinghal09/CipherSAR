@@ -79,11 +79,6 @@ button { color: inherit; }
 .security-card > div:last-child { display: grid; gap: 4px; }
 .security-card strong { font-size: 11px; }
 .security-card span { color: var(--text-3); font-size: 9px; line-height: 1.45; }
-.analyst-card { margin-top: 10px; display: flex; align-items: center; gap: 9px; padding: 11px 9px; border-top: 1px solid var(--border); }
-.avatar { width: 32px; height: 32px; display: grid; place-items: center; border-radius: 10px; color: var(--brand); background: var(--brand-soft); font-size: 11px; font-weight: 700; }
-.analyst-card > div:nth-child(2) { flex: 1; display: grid; gap: 2px; }
-.analyst-card strong { font-size: 11px; }
-.analyst-card span { color: var(--text-3); font-size: 9px; }
 .sidebar__close, .menu-button { display: none !important; }
 .nav-scrim { display: none; }
 

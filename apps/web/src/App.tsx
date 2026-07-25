@@ -62,11 +62,12 @@ import {
   EmptyState,
   Skeleton,
 } from "./components/ui";
+import { formatInr, localizeCurrencyText } from "./formatters";
 
 const DEFAULT_QUERY = "Find structuring patterns in the last 30 days";
 const EXAMPLES = [
   "Find structuring patterns in the last 30 days",
-  "Which customers made 10+ transactions under $10,000?",
+  "Which customers made 10+ transactions under ₹10,000?",
   "Is customer ID 4521 suspicious?",
   "Analyse this dataset for suspicious activity",
 ];
@@ -186,8 +187,9 @@ export function App() {
       setLoading(true);
       setError(null);
       try {
+        const normalizedQuery = nextQuery.replaceAll("₹", "$");
         const response = await runInvestigation({
-          query: nextQuery,
+          query: normalizedQuery,
           ...(transactions.length ? { transactions } : {}),
           ...(transactions.length && customers.length ? { customers } : {}),
           policy: effectivePolicy,
@@ -304,7 +306,7 @@ export function App() {
   const openInvestigation = (investigation: InvestigationResponse) => {
     setResult(investigation);
     setSelectedId(investigation.findings[0]?.entityId ?? null);
-    setQuery(investigation.parsedQuery.raw);
+    setQuery(localizeCurrencyText(investigation.parsedQuery.raw));
     navigate("command");
   };
 
@@ -389,7 +391,7 @@ export function App() {
           </div>
           <div>
             <strong>CipherSAR</strong>
-            <span>Veyra Bank · FCC</span>
+            <span>Financial Crime Compliance</span>
           </div>
           <button
             className="icon-button sidebar__close"
@@ -442,14 +444,6 @@ export function App() {
           </div>
         </div>
 
-        <div className="analyst-card">
-          <div className="avatar">AM</div>
-          <div>
-            <strong>Ankit Marik</strong>
-            <span>AML analyst</span>
-          </div>
-          <ChevronRight size={16} />
-        </div>
       </aside>
 
       {mobileNavOpen ? (
@@ -666,7 +660,7 @@ export function App() {
         <footer>
           <div className="footer-brand">
             <ShieldCheck size={17} />
-            <strong>Veyra Bank</strong>
+            <strong>CipherSAR</strong>
             <span>Financial Crime Compliance</span>
           </div>
           <div>
@@ -792,11 +786,11 @@ function PlanPanel({
         <CircleDot size={16} />
         <div>
           <span>Parsed intent · {result.parsedQuery.intent.replaceAll("_", " ")}</span>
-          <strong>{result.parsedQuery.interpretation}</strong>
+          <strong>{localizeCurrencyText(result.parsedQuery.interpretation)}</strong>
         </div>
         <em>{Math.round(result.parsedQuery.confidence * 100)}%</em>
       </div>
-      <p className="plan-rationale">{result.plan.rationale}</p>
+      <p className="plan-rationale">{localizeCurrencyText(result.plan.rationale)}</p>
       <ol className="plan-steps">
         {result.plan.steps.map((step, index) => (
           <li key={step.id}>
@@ -808,8 +802,12 @@ function PlanPanel({
                 <strong>{TOOL_LABELS[step.tool]}</strong>
                 <span>{step.durationMs ?? "—"}ms</span>
               </div>
-              <p>{step.reason}</p>
-              <small>{step.outputSummary}</small>
+              <p>{localizeCurrencyText(step.reason)}</p>
+              <small>
+                {localizeCurrencyText(
+                  step.outputSummary ?? "No output recorded",
+                )}
+              </small>
             </div>
           </li>
         ))}
@@ -822,7 +820,7 @@ function PlanPanel({
           {result.plan.skippedTools.map((item) => (
             <div key={item.tool}>
               <span>{TOOL_LABELS[item.tool]}</span>
-              <p>{item.reason}</p>
+              <p>{localizeCurrencyText(item.reason)}</p>
             </div>
           ))}
         </details>
@@ -959,9 +957,7 @@ function FindingsTable({
                     <span>{Math.round(finding.confidence * 100)}% confidence</span>
                   </td>
                   <td>
-                    <strong>
-                      ${finding.aggregateAmount.toLocaleString("en-US")}
-                    </strong>
+                    <strong>{formatInr(finding.aggregateAmount)}</strong>
                     <span>{dateSpan(finding)}</span>
                   </td>
                   <td>
@@ -1020,12 +1016,14 @@ function EvidencePanel({
         <AlertTriangle size={15} />
         {finding.riskLevel} risk · {finding.pattern.replaceAll("_", " ")}
       </span>
-      <p className="explanation">{finding.explanation}</p>
+      <p className="explanation">
+        {localizeCurrencyText(finding.explanation)}
+      </p>
       <div className="evidence-facts">
         {finding.evidence.map((fact) => (
           <div key={fact}>
             <Check size={14} />
-            <span>{fact}</span>
+            <span>{localizeCurrencyText(fact)}</span>
           </div>
         ))}
       </div>
@@ -1043,7 +1041,7 @@ function EvidencePanel({
             <div className="contribution__bar">
               <i style={{ width: `${Math.min(100, item.contribution * 2.2)}%` }} />
             </div>
-            <small>{item.reason}</small>
+            <small>{localizeCurrencyText(item.reason)}</small>
           </div>
         ))}
       </div>
@@ -1085,8 +1083,8 @@ function EdaPanel({ result }: { result: InvestigationResponse }) {
         <span className="status-pill"><Check size={13} /> Quality checked</span>
       </header>
       <div className="eda-grid">
-        <div><span>Total volume</span><strong>${result.eda.totalVolume.toLocaleString()}</strong></div>
-        <div><span>Median amount</span><strong>${result.eda.medianAmount.toLocaleString()}</strong></div>
+        <div><span>Total volume</span><strong>{formatInr(result.eda.totalVolume)}</strong></div>
+        <div><span>Median amount</span><strong>{formatInr(result.eda.medianAmount)}</strong></div>
         <div><span>Customer count</span><strong>{result.eda.customerCount}</strong></div>
         <div><span>Quality issues</span><strong>{Object.values(result.eda.dataQuality).reduce((a, b) => a + b, 0)}</strong></div>
       </div>
@@ -1106,7 +1104,7 @@ function DashboardSkeleton() {
 
 function shortenExample(example: string): string {
   if (example.includes("structuring")) return "Structuring · 30 days";
-  if (example.includes("10+")) return "10+ under $10k";
+  if (example.includes("10+")) return "10+ under ₹10k";
   if (example.includes("4521")) return "Customer 4521";
   return example;
 }
@@ -1180,7 +1178,7 @@ function parseTransactionsCsv(source: string): Transaction[] {
         customerId,
         timestamp: timestamp.toISOString(),
         amount,
-        currency: (get(row, "currency") || "USD").toUpperCase(),
+        currency: (get(row, "currency") || "INR").toUpperCase(),
         type: typeValue,
         country: (get(row, "country") || "US").toUpperCase(),
         segment: ["retail", "business", "private"].includes(segmentValue)

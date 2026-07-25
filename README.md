@@ -4,7 +4,7 @@
 
 CipherSAR turns a compliance analyst's natural-language question into a query-specific investigation plan. It selects only the tools needed for that request, detects suspicious activity with a hybrid rule/statistical ensemble, and returns defensible evidence, risk, confidence, and an escalation recommendation.
 
-The interface is presented as an internal Financial Crime Compliance workspace for the fictional **Veyra Bank**. CipherSAR is decision-support software: every escalation requires human review.
+The interface is presented as a bank-neutral internal Financial Crime Compliance workspace. CipherSAR is decision-support software: every escalation requires human review.
 
 ## Operational workspace
 
@@ -39,7 +39,7 @@ CipherSAR addresses that problem with:
 | Query | Plan chosen by CipherSAR |
 | --- | --- |
 | `Find structuring patterns in the last 30 days` | Filter by date, build structuring-only features, run the structuring detector, score, explain, recommend. Full EDA and unrelated velocity tools are skipped. |
-| `Which customers made 10+ transactions under $10,000?` | Apply amount filters and direct aggregation. No ML/anomaly detector is invoked. |
+| `Which customers made 10+ transactions under ₹10,000?` | Apply amount filters and direct aggregation. No ML/anomaly detector is invoked. |
 | `Is customer ID 4521 suspicious?` | Resolve the entity, analyse only that customer's history, and explain its current evidence. Full-population EDA is skipped. |
 | `Analyse this dataset for suspicious activity` | Run selective EDA, broad AML feature engineering, and the hybrid anomaly ensemble. |
 
@@ -106,7 +106,7 @@ The live judge experience uses a deterministic CipherSAR retail-banking generato
 
 - 35 customers across retail and business segments;
 - normal card, ACH, and wire activity;
-- customer `CUS-4521`: repeated cash deposits close to $10,000;
+- customer `CUS-4521`: repeated cash deposits close to ₹10,000;
 - customer `CUS-3108`: distributed small cash deposits across branches;
 - customer `CUS-8842`: fast inbound/outbound cross-border wire flows.
 

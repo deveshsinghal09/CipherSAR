@@ -11,4 +11,14 @@ describe("investigation start behavior", () => {
     expect(markup).not.toContain('aria-label="Investigation metrics"');
     expect(markup).not.toContain('aria-label="Active trained model"');
   });
+
+  it("uses bank-neutral branding and does not render an analyst profile", () => {
+    const markup = renderToStaticMarkup(<App />);
+
+    expect(markup).toContain("Financial Crime Compliance");
+    expect(markup).toContain("₹10k");
+    expect(markup).not.toContain("Veyra Bank");
+    expect(markup).not.toContain("Ankit Marik");
+    expect(markup).not.toContain("AML analyst");
+  });
 });
