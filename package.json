@@ -1,0 +1,32 @@
+{
+  "name": "ciphersar",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Adaptive, explainable AML investigation agent for financial institutions.",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "concurrently -n api,web -c green,cyan \"npm run dev -w @ciphersar/api\" \"npm run dev -w @ciphersar/web\"",
+    "dev:api": "npm run dev -w @ciphersar/api",
+    "dev:web": "npm run dev -w @ciphersar/web",
+    "build": "npm run build -w @ciphersar/shared && npm run build -w @ciphersar/api && npm run build -w @ciphersar/web",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "npm run typecheck -w @ciphersar/shared && npm run typecheck -w @ciphersar/api && npm run typecheck -w @ciphersar/web",
+    "lint": "npm run typecheck",
+    "start": "npm run start -w @ciphersar/api"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "concurrently": "^9.2.0",
+    "tsx": "^4.20.0",
+    "tsup": "^8.5.0",
+    "typescript": "^5.8.0",
+    "vitest": "^3.2.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

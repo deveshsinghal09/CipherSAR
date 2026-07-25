@@ -1,0 +1,10 @@
+.superdesign/tmp/
+node_modules/
+dist/
+coverage/
+.env
+.env.local
+*.log
+*.tsbuildinfo
+.DS_Store
+apps/api/data/uploads/
