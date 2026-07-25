@@ -43,7 +43,24 @@ CipherSAR addresses that problem with:
 | `Is customer ID 4521 suspicious?` | Resolve the entity, analyse only that customer's history, and explain its current evidence. Full-population EDA is skipped. |
 | `Analyse this dataset for suspicious activity` | Run selective EDA, broad AML feature engineering, and the hybrid anomaly ensemble. |
 
-Every API response contains `parsedQuery`, `plan.steps`, `plan.skippedTools`, `metrics`, `findings`, and model-governance safeguards.
+Every API response contains `decisionSummary`, `parsedQuery`, `plan.steps`, `plan.skippedTools`, `metrics`, `findings`, top linked transactions, and model-governance safeguards.
+
+## Requirement coverage
+
+| Required capability | CipherSAR implementation |
+| --- | --- |
+| Intent, filters, entity, and AML pattern extraction | `parseQuery` extracts date ranges, relative dates, segment, country, transaction type, amount thresholds, customer IDs, and six AML pattern families. |
+| Dynamic execution planning | `buildExecutionPlan` selects and orders only relevant tools and records why unused tools were skipped. |
+| Query-relevant loading and preprocessing | Dataset loading is followed by filter-first or entity-first subsetting before any feature computation. |
+| Selective EDA | Broad analysis invokes `selective_eda`; targeted, threshold, and single-customer paths skip it. |
+| On-demand AML features | Customer features include frequency, rolling 24-hour count, rolling 7-day amount, robust amount deviation, branch/country spread, velocity, flow-through, and 48-hour rapid cash-out signals. |
+| Hybrid anomaly detection | Pattern rules, robust MAD-based statistics, deterministic aggregation, and the trained balanced random forest are invoked according to query intent. |
+| Risk classification | Evidence contributions are calibrated to 0–100 and classified with configurable low, medium, and high thresholds. |
+| Query-tied explanations | Each finding cites the original request, detected pattern, observed evidence, confidence, and feature contributions. |
+| Escalation recommendation | Configurable policy maps evidence to `monitor`, `review`, or `report`; human approval always remains mandatory. |
+| Judge-inspectable structured output | `decisionSummary`, parsed filters, selected/skipped tools, scope reduction, top transactions, findings, charts, metrics, safeguards, and the full tool trace are returned or displayed. |
+
+The agent does not require Gemini or another hosted LLM to function. Deterministic orchestration keeps the judged workflow reproducible, fast, explainable, and available offline; an LLM can be added later as an optional wording layer without controlling detection or escalation.
 
 ## Detection approach
 
@@ -123,7 +140,7 @@ Raw Kaggle files are intentionally gitignored. No real customer or financial dat
 - Docker + Nginx
 - GitHub Actions
 
-The interface is a responsive, high-contrast forensic command center with restrained bank branding, model-governance surfaces, clear risk states, a persistent navigation shell, and explicit human-control messaging.
+The interface is a responsive light-theme forensic command center with bank-neutral branding, model-governance surfaces, clear risk states, a persistent navigation shell, query-aware visualizations, and explicit human-control messaging.
 
 ## Local setup
 

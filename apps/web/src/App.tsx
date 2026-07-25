@@ -25,15 +25,18 @@ import {
   Fingerprint,
   GitBranch,
   LayoutDashboard,
+  ListFilter,
   LoaderCircle,
   LockKeyhole,
   Menu,
   Network,
   RefreshCw,
+  Route,
   Search,
   Settings,
   ShieldCheck,
   Sparkles,
+  Target,
   UploadCloud,
   Users,
   X,
@@ -187,9 +190,8 @@ export function App() {
       setLoading(true);
       setError(null);
       try {
-        const normalizedQuery = nextQuery.replaceAll("₹", "$");
         const response = await runInvestigation({
-          query: normalizedQuery,
+          query: nextQuery,
           ...(transactions.length ? { transactions } : {}),
           ...(transactions.length && customers.length ? { customers } : {}),
           policy: effectivePolicy,
@@ -572,7 +574,10 @@ export function App() {
           </Card>
 
           {result ? (
-            <ModelPulse model={result.model} onOpen={() => navigate("model")} />
+            <>
+              <AgentDecisionPanel result={result} />
+              <ModelPulse model={result.model} onOpen={() => navigate("model")} />
+            </>
           ) : null}
 
           {error ? (
@@ -675,6 +680,92 @@ export function App() {
         </footer>
       </div>
     </div>
+  );
+}
+
+function AgentDecisionPanel({
+  result,
+}: {
+  result: InvestigationResponse;
+}) {
+  const decision = result.decisionSummary;
+  return (
+    <section className="panel agent-decision" aria-label="Agent execution summary">
+      <header className="agent-decision__header">
+        <div>
+          <span className="section-kicker">Query-aware execution</span>
+          <h2>What the agent decided—and why</h2>
+        </div>
+        <span className="status-pill">
+          <Check size={13} /> {decision.selectedTools.length} tools selected
+        </span>
+      </header>
+
+      <div className="agent-decision__grid">
+        <article className="decision-block decision-block--request">
+          <div className="decision-block__icon"><Target size={17} /></div>
+          <div>
+            <span>User request</span>
+            <strong>{localizeCurrencyText(decision.userRequest)}</strong>
+            <p>{localizeCurrencyText(decision.strategy)}</p>
+          </div>
+        </article>
+
+        <article className="decision-block">
+          <div className="decision-block__icon"><ListFilter size={17} /></div>
+          <div>
+            <span>Detected context</span>
+            <div className="decision-chips">
+              <em>{decision.detectedIntent.replaceAll("_", " ")}</em>
+              {decision.targetPattern ? (
+                <em>{decision.targetPattern.replaceAll("_", " ")}</em>
+              ) : null}
+              {decision.targetEntity ? <em>{decision.targetEntity}</em> : null}
+              {decision.appliedFilters.map((filter) => (
+                <em key={`${filter.field}-${filter.value}`}>
+                  {filter.field.replaceAll(/([A-Z])/g, " $1")} ·{" "}
+                  {localizeCurrencyText(filter.value)}
+                </em>
+              ))}
+              {!decision.appliedFilters.length ? <em>full dataset scope</em> : null}
+            </div>
+          </div>
+        </article>
+
+        <article className="decision-block">
+          <div className="decision-block__icon"><Route size={17} /></div>
+          <div>
+            <span>Scoped execution</span>
+            <strong>
+              {decision.inputScope.transactions.toLocaleString()} →{" "}
+              {decision.analyzedScope.transactions.toLocaleString()} transactions
+            </strong>
+            <div className="scope-meter" aria-label={`${decision.analyzedScope.reductionPercent}% scope reduction`}>
+              <i
+                style={{
+                  width: `${Math.max(4, 100 - decision.analyzedScope.reductionPercent)}%`,
+                }}
+              />
+            </div>
+            <p>
+              {decision.analyzedScope.reductionPercent}% reduced ·{" "}
+              {decision.analyzedScope.customers} customers analysed ·{" "}
+              {decision.skippedToolCount} tools skipped
+            </p>
+          </div>
+        </article>
+      </div>
+
+      <div className="selected-tool-chain" aria-label="Selected tool chain">
+        {result.plan.steps.map((step, index) => (
+          <div key={step.id}>
+            <span>{index + 1}</span>
+            <strong>{TOOL_LABELS[step.tool]}</strong>
+            {index < result.plan.steps.length - 1 ? <ChevronRight size={13} /> : null}
+          </div>
+        ))}
+      </div>
+    </section>
   );
 }
 
@@ -872,6 +963,26 @@ function RiskOverview({ findings }: { findings: RiskFinding[] }) {
           </div>
         ))}
       </div>
+      {findings.length ? (
+        <div className="score-landscape">
+          <div className="score-landscape__heading">
+            <strong>Risk score landscape</strong>
+            <span>Top flagged entities</span>
+          </div>
+          {findings.slice(0, 5).map((finding) => (
+            <div key={finding.entityId}>
+              <span>{finding.customerId}</span>
+              <div>
+                <i
+                  className={`risk-fill risk-fill--${finding.riskLevel}`}
+                  style={{ width: `${finding.riskScore}%` }}
+                />
+              </div>
+              <strong>{finding.riskScore}</strong>
+            </div>
+          ))}
+        </div>
+      ) : null}
     </section>
   );
 }
@@ -1027,6 +1138,26 @@ function EvidencePanel({
           </div>
         ))}
       </div>
+      {finding.topTransactions?.length ? (
+        <div className="evidence-transactions">
+          <div className="evidence-transactions__heading">
+            <strong>Top linked transactions</strong>
+            <span>Ranked by amount</span>
+          </div>
+          {finding.topTransactions.map((transaction) => (
+            <div className="evidence-transaction" key={transaction.id}>
+              <div>
+                <strong>{transaction.id}</strong>
+                <span>
+                  {transaction.type.replaceAll("_", " ")} ·{" "}
+                  {formatCompactDate(transaction.timestamp)}
+                </span>
+              </div>
+              <strong>{formatInr(transaction.amount)}</strong>
+            </div>
+          ))}
+        </div>
+      ) : null}
       <div className="contributions">
         <div className="contributions__heading">
           <strong>Score contribution</strong>
@@ -1088,7 +1219,50 @@ function EdaPanel({ result }: { result: InvestigationResponse }) {
         <div><span>Customer count</span><strong>{result.eda.customerCount}</strong></div>
         <div><span>Quality issues</span><strong>{Object.values(result.eda.dataQuality).reduce((a, b) => a + b, 0)}</strong></div>
       </div>
+      <div className="eda-charts">
+        <DistributionChart
+          title="Transaction mix"
+          data={result.eda.typeDistribution}
+        />
+        <DistributionChart
+          title="Country distribution"
+          data={result.eda.countryDistribution}
+        />
+      </div>
     </section>
+  );
+}
+
+function DistributionChart({
+  title,
+  data,
+}: {
+  title: string;
+  data: Record<string, number>;
+}) {
+  const entries = Object.entries(data).sort((left, right) => right[1] - left[1]);
+  const total = Math.max(
+    1,
+    entries.reduce((sum, [, count]) => sum + count, 0),
+  );
+  return (
+    <article className="distribution-chart">
+      <div className="distribution-chart__heading">
+        <strong>{title}</strong>
+        <span>{total.toLocaleString()} records</span>
+      </div>
+      <div className="distribution-chart__plot">
+        {entries.slice(0, 7).map(([label, count]) => (
+          <div key={label}>
+            <span>{label.replaceAll("_", " ")}</span>
+            <div>
+              <i style={{ width: `${Math.max(3, (count / total) * 100)}%` }} />
+            </div>
+            <strong>{Math.round((count / total) * 100)}%</strong>
+          </div>
+        ))}
+      </div>
+    </article>
   );
 }
 
@@ -1117,6 +1291,14 @@ function dateSpan(finding: RiskFinding): string {
     Math.ceil((end.getTime() - start.getTime()) / 86_400_000) + 1,
   );
   return `${days} day${days === 1 ? "" : "s"}`;
+}
+
+function formatCompactDate(timestamp: string): string {
+  return new Intl.DateTimeFormat("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  }).format(new Date(timestamp));
 }
 
 function patternCounts(findings: RiskFinding[]): Array<[string, number]> {
