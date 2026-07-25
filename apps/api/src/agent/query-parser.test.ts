@@ -30,5 +30,22 @@ describe("parseQuery", () => {
     expect(result.intent).toBe("customer_investigation");
     expect(result.filters.customerId).toBe("4521");
   });
-});
 
+  it("extracts combined date, segment, country, type, currency, and pattern filters", () => {
+    const result = parseQuery(
+      "Find structuring for segment retail in country IN with cash deposits from 2026-06-01 to 2026-07-01 under ₹10,000",
+      NOW,
+    );
+
+    expect(result.intent).toBe("pattern_search");
+    expect(result.pattern).toBe("structuring");
+    expect(result.filters).toMatchObject({
+      dateFrom: "2026-06-01",
+      dateTo: "2026-07-01",
+      segment: "retail",
+      country: "IN",
+      transactionType: "cash_deposit",
+      amountBelow: 10_000,
+    });
+  });
+});

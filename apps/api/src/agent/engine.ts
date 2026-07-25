@@ -1,8 +1,11 @@
 import { randomUUID } from "node:crypto";
 import type {
+  AgentDecisionSummary,
   AnalyzeRequest,
   InvestigationResponse,
+  ParsedQuery,
   PlanStep,
+  QueryFilters,
 } from "@ciphersar/shared";
 import { DEFAULT_AML_POLICY } from "@ciphersar/shared";
 import { createSampleDataset } from "../data/sample-data";
@@ -53,6 +56,14 @@ export class InvestigationAgent {
       generatedAt: now.toISOString(),
       parsedQuery,
       plan,
+      decisionSummary: createDecisionSummary(
+        parsedQuery,
+        plan,
+        sourceTransactions.length,
+        sourceCustomers.length,
+        context.transactions.length,
+        analyzedCustomers,
+      ),
       metrics: {
         inputTransactions: sourceTransactions.length,
         analyzedTransactions: context.transactions.length,
@@ -98,6 +109,55 @@ export class InvestigationAgent {
       throw error;
     }
   }
+}
+
+function createDecisionSummary(
+  parsedQuery: ParsedQuery,
+  plan: InvestigationResponse["plan"],
+  inputTransactions: number,
+  inputCustomers: number,
+  analyzedTransactions: number,
+  analyzedCustomers: number,
+): AgentDecisionSummary {
+  const appliedFilters = Object.entries(parsedQuery.filters)
+    .filter(([, value]) => value !== undefined)
+    .map(([field, value]) => ({
+      field: field as keyof QueryFilters,
+      value: formatFilterValue(value),
+    }));
+  const reductionPercent =
+    inputTransactions > 0
+      ? Math.round(
+          (1 - analyzedTransactions / inputTransactions) * 10_000,
+        ) / 100
+      : 0;
+
+  return {
+    userRequest: parsedQuery.raw,
+    detectedIntent: parsedQuery.intent,
+    ...(parsedQuery.pattern ? { targetPattern: parsedQuery.pattern } : {}),
+    ...(parsedQuery.filters.customerId
+      ? { targetEntity: parsedQuery.filters.customerId }
+      : {}),
+    appliedFilters,
+    selectedTools: plan.steps.map((step) => step.tool),
+    skippedToolCount: plan.skippedTools.length,
+    inputScope: {
+      transactions: inputTransactions,
+      customers: inputCustomers,
+    },
+    analyzedScope: {
+      transactions: analyzedTransactions,
+      customers: analyzedCustomers,
+      reductionPercent: Math.max(0, reductionPercent),
+    },
+    strategy: plan.rationale,
+  };
+}
+
+function formatFilterValue(value: QueryFilters[keyof QueryFilters]): string {
+  if (typeof value === "number") return value.toLocaleString("en-IN");
+  return String(value).replaceAll("_", " ");
 }
 
 function createSummary(

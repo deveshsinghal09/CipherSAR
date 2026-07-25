@@ -25,7 +25,7 @@ const TRANSACTION_TYPES: Array<[RegExp, TransactionType]> = [
 ];
 
 function parseMoney(value: string): number {
-  const normalized = value.replace(/[,$\s]/g, "").toLowerCase();
+  const normalized = value.replace(/[,₹$\s]/g, "").toLowerCase();
   const multiplier = normalized.endsWith("m")
     ? 1_000_000
     : normalized.endsWith("k")
@@ -45,7 +45,6 @@ function addIfDefined<T extends object, K extends keyof T>(
 export function parseQuery(rawQuery: string, now = new Date()): ParsedQuery {
   const raw = rawQuery.trim();
   const filters: QueryFilters = {};
-  const lower = raw.toLowerCase();
 
   const pattern = PATTERN_TERMS.find(([expression]) => expression.test(raw))?.[1];
   const transactionType = TRANSACTION_TYPES.find(([expression]) =>
@@ -60,17 +59,20 @@ export function parseQuery(rawQuery: string, now = new Date()): ParsedQuery {
     /\b(\d+)\s*\+?\s*(?:or more\s+)?transactions?\b/i,
   );
   const underMatch = raw.match(
-    /\b(?:under|below|less than)\s*\$?\s*([\d,.]+\s*[km]?)\b/i,
+    /\b(?:under|below|less than)\s*[₹$]?\s*([\d,.]+\s*[km]?)\b/i,
   );
   const aboveMatch = raw.match(
-    /\b(?:over|above|more than)\s*\$?\s*([\d,.]+\s*[km]?)\b/i,
+    /\b(?:over|above|more than)\s*[₹$]?\s*([\d,.]+\s*[km]?)\b/i,
   );
   const dateRangeMatch = raw.match(
     /\b(?:from|between)\s+(\d{4}-\d{2}-\d{2})\s+(?:to|and)\s+(\d{4}-\d{2}-\d{2})\b/i,
   );
   const countryMatch = raw.match(
-    /\b(?:country|jurisdiction)\s*(?:is|=|:)?\s*([a-z][a-z\s-]{1,30})\b/i,
+    /\b(?:country|jurisdiction)\s*(?:is|=|:)?\s*([a-z][a-z\s-]{1,30}?)(?=\s+(?:with|and|from|between|last|past|previous|for|using|segment|cash|wire|card|ach)\b|[,.?]|$)/i,
   );
+  const segmentMatch =
+    raw.match(/\bsegment\s*(?:is|=|:)?\s*(retail|business|private)\b/i) ??
+    raw.match(/\b(retail|business|private)\s+(?:customers?|segment)\b/i);
 
   addIfDefined(filters, "customerId", customerMatch?.[1]?.toUpperCase());
   addIfDefined(filters, "lastDays", lastDaysMatch ? Number(lastDaysMatch[1]) : undefined);
@@ -94,8 +96,8 @@ export function parseQuery(rawQuery: string, now = new Date()): ParsedQuery {
     filters.dateTo = now.toISOString();
   }
 
-  if (/\b(retail|business|private)\s+(?:customers?|segment)\b/i.test(raw)) {
-    const segment = lower.match(/\b(retail|business|private)\b/)?.[1];
+  if (segmentMatch) {
+    const segment = segmentMatch[1]?.toLowerCase();
     if (segment === "retail" || segment === "business" || segment === "private") {
       filters.segment = segment;
     }
@@ -151,10 +153,10 @@ function describeInterpretation(
     scope.push(`${filters.minimumTransactions}+ transactions`);
   }
   if (filters.amountBelow !== undefined) {
-    scope.push(`amounts below $${filters.amountBelow.toLocaleString("en-US")}`);
+    scope.push(`amounts below ₹${filters.amountBelow.toLocaleString("en-IN")}`);
   }
   if (filters.amountAbove !== undefined) {
-    scope.push(`amounts above $${filters.amountAbove.toLocaleString("en-US")}`);
+    scope.push(`amounts above ₹${filters.amountAbove.toLocaleString("en-IN")}`);
   }
   if (filters.transactionType) {
     scope.push(filters.transactionType.replaceAll("_", " "));
@@ -174,4 +176,3 @@ function describeInterpretation(
 
   return `Run ${subject}${scope.length ? ` scoped to ${scope.join(", ")}` : ""}.`;
 }
-

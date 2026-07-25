@@ -56,6 +56,21 @@ const investigation: InvestigationResponse = {
     steps: [],
     skippedTools: [],
   },
+  decisionSummary: {
+    userRequest: "Find structuring",
+    detectedIntent: "pattern_search",
+    targetPattern: "structuring",
+    appliedFilters: [],
+    selectedTools: [],
+    skippedToolCount: 0,
+    inputScope: { transactions: 1, customers: 1 },
+    analyzedScope: {
+      transactions: 1,
+      customers: 1,
+      reductionPercent: 0,
+    },
+    strategy: "Targeted plan",
+  },
   metrics: {
     inputTransactions: 1,
     analyzedTransactions: 1,

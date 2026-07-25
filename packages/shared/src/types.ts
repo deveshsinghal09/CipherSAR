@@ -121,6 +121,14 @@ export interface RiskFinding {
   explanation: string;
   recommendedAction: "monitor" | "review" | "report";
   transactionIds: string[];
+  topTransactions: Array<{
+    id: string;
+    timestamp: string;
+    amount: number;
+    currency: string;
+    type: TransactionType;
+    country: string;
+  }>;
 }
 
 export interface EdaSummary {
@@ -156,6 +164,29 @@ export interface AmlPolicy {
   minimumReportConfidence: number;
 }
 
+export interface AgentDecisionSummary {
+  userRequest: string;
+  detectedIntent: QueryIntent;
+  targetPattern?: AmlPattern | undefined;
+  targetEntity?: string | undefined;
+  appliedFilters: Array<{
+    field: keyof QueryFilters;
+    value: string;
+  }>;
+  selectedTools: ToolName[];
+  skippedToolCount: number;
+  inputScope: {
+    transactions: number;
+    customers: number;
+  };
+  analyzedScope: {
+    transactions: number;
+    customers: number;
+    reductionPercent: number;
+  };
+  strategy: string;
+}
+
 export const DEFAULT_AML_POLICY: AmlPolicy = {
   mediumRiskThreshold: 35,
   highRiskThreshold: 70,
@@ -169,6 +200,7 @@ export interface InvestigationResponse {
   generatedAt: string;
   parsedQuery: ParsedQuery;
   plan: ExecutionPlan;
+  decisionSummary: AgentDecisionSummary;
   metrics: InvestigationMetrics;
   eda?: EdaSummary | undefined;
   findings: RiskFinding[];

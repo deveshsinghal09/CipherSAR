@@ -15,7 +15,7 @@ describe("hybrid AML detectors", () => {
     expect(candidate).toBeDefined();
     const finding = toFinding(scoreCandidates([candidate!])[0]!);
     expect(finding.riskLevel).toBe("high");
-    expect(finding.evidence.join(" ")).toContain("sub-$10,000");
+    expect(finding.evidence.join(" ")).toContain("sub-₹10,000");
     expect(finding.contributions.length).toBeGreaterThanOrEqual(3);
   });
 

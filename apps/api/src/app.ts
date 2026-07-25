@@ -77,7 +77,7 @@ export function createApp(): express.Express {
     response.json({
       examples: [
         "Find structuring patterns in the last 30 days",
-        "Which customers made 10+ transactions under $10,000?",
+        "Which customers made 10+ transactions under ₹10,000?",
         "Is customer ID 4521 suspicious?",
         "Flag high-risk customers",
         "Analyse this dataset for suspicious activity",

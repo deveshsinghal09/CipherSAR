@@ -21,6 +21,19 @@ describe("InvestigationAgent", () => {
     expect(result.plan.steps.every((step) => step.status === "completed")).toBe(
       true,
     );
+    expect(result.decisionSummary.userRequest).toBe(
+      "Find structuring patterns in the last 30 days",
+    );
+    expect(result.decisionSummary.selectedTools).toEqual(
+      result.plan.steps.map((step) => step.tool),
+    );
+    expect(result.decisionSummary.appliedFilters).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ field: "lastDays", value: "30" }),
+      ]),
+    );
+    expect(result.findings[0]?.explanation).toContain("For the request");
+    expect(result.findings[0]?.topTransactions.length).toBeGreaterThan(0);
   });
 
   it("answers direct threshold queries without anomaly detection", async () => {
@@ -51,4 +64,3 @@ describe("InvestigationAgent", () => {
     expect(result.findings[0]?.customerId).toBe("CUS-4521");
   });
 });
-

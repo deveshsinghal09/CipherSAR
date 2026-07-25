@@ -46,7 +46,7 @@ export function createSampleDataset(now = new Date()): SampleDataset {
         customerId: id,
         timestamp: isoDaysAgo(now, 2 + Math.floor(random() * 55), 8 + (txIndex % 10)),
         amount: Math.round((35 + random() * 4_500) * 100) / 100,
-        currency: "USD",
+        currency: "INR",
         type: types[Math.floor(random() * types.length)] ?? "ach",
         country,
         segment,
@@ -93,7 +93,7 @@ export function createSampleDataset(now = new Date()): SampleDataset {
       customerId: "CUS-4521",
       timestamp: isoDaysAgo(now, 1 + (index % 6), 9 + (index % 7)),
       amount,
-      currency: "USD",
+      currency: "INR",
       type: "cash_deposit",
       country: "US",
       branchId: `BR-${1 + (index % 4)}`,
@@ -108,7 +108,7 @@ export function createSampleDataset(now = new Date()): SampleDataset {
       customerId: "CUS-3108",
       timestamp: isoDaysAgo(now, index % 5, 8 + (index % 8)),
       amount: 950 + (index % 6) * 275,
-      currency: "USD",
+      currency: "INR",
       type: "cash_deposit",
       country: "US",
       branchId: `BR-${5 + (index % 5)}`,
@@ -131,7 +131,7 @@ export function createSampleDataset(now = new Date()): SampleDataset {
       customerId: "CUS-8842",
       timestamp: isoDaysAgo(now, 2 - Math.floor(index / 3), 8 + index * 2),
       amount: type === "wire_in" ? 48_000 + index * 1_100 : 45_500 + index * 900,
-      currency: "USD",
+      currency: "INR",
       type,
       country: index % 2 === 0 ? "AE" : "SG",
       segment: "business",
@@ -145,4 +145,3 @@ export function createSampleDataset(now = new Date()): SampleDataset {
     transactions: transactions.sort((a, b) => a.timestamp.localeCompare(b.timestamp)),
   };
 }
-

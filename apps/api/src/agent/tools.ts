@@ -97,7 +97,7 @@ export const toolRegistry: Record<ToolName, ToolExecutor> = {
           transactions,
           evidence: [
             `${transactions.length} transactions matched the requested threshold`,
-            `$${round(total, 2).toLocaleString("en-US")} aggregate matched value`,
+            `₹${round(total, 2).toLocaleString("en-IN")} aggregate matched value`,
           ],
           contributions: [
             {
@@ -131,7 +131,7 @@ export const toolRegistry: Record<ToolName, ToolExecutor> = {
         ? context.features
         : engineerCustomerFeatures(context.transactions);
     return {
-      outputSummary: `Daily velocity, robust deviation, counterparty, and flow-through features available for ${context.features.length} customers`,
+      outputSummary: `Rolling 24-hour frequency, rolling 7-day sums, amount deviation, counterparty, and rapid cash-out features available for ${context.features.length} customers`,
     };
   },
   detect_pattern: async (context) => {
@@ -156,7 +156,7 @@ export const toolRegistry: Record<ToolName, ToolExecutor> = {
   },
   explain_findings: async (context) => {
     context.findings = context.scoredCandidates.map((candidate) =>
-      toFinding(candidate, context.policy),
+      toFinding(candidate, context.policy, context.parsed),
     );
     return {
       outputSummary: `${context.findings.length} evidence-linked explanations generated`,
@@ -184,9 +184,11 @@ function applyFilters(
   parsed: ParsedQuery,
 ): Transaction[] {
   const filters = parsed.filters;
+  const dateFrom = normalizeDateBoundary(filters.dateFrom, "start");
+  const dateTo = normalizeDateBoundary(filters.dateTo, "end");
   return transactions.filter((item) => {
-    if (filters.dateFrom && item.timestamp < filters.dateFrom) return false;
-    if (filters.dateTo && item.timestamp > filters.dateTo) return false;
+    if (dateFrom && item.timestamp < dateFrom) return false;
+    if (dateTo && item.timestamp > dateTo) return false;
     if (filters.country && item.country.toLowerCase() !== filters.country.toLowerCase()) {
       return false;
     }
@@ -200,6 +202,16 @@ function applyFilters(
     }
     return true;
   });
+}
+
+function normalizeDateBoundary(
+  value: string | undefined,
+  boundary: "start" | "end",
+): string | undefined {
+  if (!value || value.length !== 10) return value;
+  return boundary === "start"
+    ? `${value}T00:00:00.000Z`
+    : `${value}T23:59:59.999Z`;
 }
 
 function createEda(transactions: Transaction[]): EdaSummary {

@@ -33,4 +33,20 @@ describe("buildExecutionPlan", () => {
     expect(tools).toContain("lookup_customer");
     expect(tools).not.toContain("selective_eda");
   });
+
+  it("filters a targeted customer subset before feature engineering", () => {
+    const plan = buildExecutionPlan(
+      parseQuery(
+        "Is customer ID 4521 suspicious in the last 7 days with cash deposits?",
+      ),
+    );
+    const tools = plan.steps.map((step) => step.tool);
+
+    expect(tools.indexOf("lookup_customer")).toBeLessThan(
+      tools.indexOf("filter_transactions"),
+    );
+    expect(tools.indexOf("filter_transactions")).toBeLessThan(
+      tools.indexOf("engineer_structuring_features"),
+    );
+  });
 });

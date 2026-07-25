@@ -2,6 +2,7 @@ import type {
   AmlPolicy,
   AmlPattern,
   FeatureContribution,
+  ParsedQuery,
   RiskFinding,
   Transaction,
 } from "@ciphersar/shared";
@@ -114,7 +115,7 @@ function detectStructuring(
       feature: "near_threshold_cash_count",
       value: feature.nearThresholdCount,
       contribution: Math.min(42, 20 + feature.nearThresholdCount * 2),
-      reason: `${feature.nearThresholdCount} cash deposits fell between $8,000 and $9,999.`,
+      reason: `${feature.nearThresholdCount} cash deposits fell between ₹8,000 and ₹9,999.`,
     },
     {
       feature: "branch_spread",
@@ -130,9 +131,9 @@ function detectStructuring(
     },
   ];
   return candidate(feature, "structuring", contributions, [
-    `${feature.nearThresholdCount} repeated sub-$10,000 cash deposits`,
+    `${feature.nearThresholdCount} repeated sub-₹10,000 cash deposits`,
     `${feature.branchCount} branches used`,
-    `$${round(feature.cashDepositAmount, 2).toLocaleString("en-US")} deposited in ${feature.activeSpanDays} days`,
+    `₹${round(feature.cashDepositAmount, 2).toLocaleString("en-IN")} deposited in ${feature.activeSpanDays} days`,
   ]);
 }
 
@@ -161,7 +162,7 @@ function detectSmurfing(
     },
   ];
   return candidate(feature, "smurfing", contributions, [
-    `${feature.smallCashCount} cash deposits below $3,000`,
+    `${feature.smallCashCount} cash deposits below ₹3,000`,
     `${feature.branchCount} branches used`,
     `peak daily activity of ${feature.maxDailyCount} transactions`,
   ]);
@@ -210,7 +211,7 @@ function detectRapidCashOut(
 ): DetectorCandidate | undefined {
   if (
     feature.cashDepositAmount < 5_000 ||
-    feature.rapidFlowRatio < 0.72 ||
+    feature.rapidCashOutRatio < 0.72 ||
     feature.activeSpanDays > 14
   ) {
     return undefined;
@@ -218,34 +219,38 @@ function detectRapidCashOut(
   const contributions: FeatureContribution[] = [
     {
       feature: "cash_out_ratio",
-      value: `${round(feature.rapidFlowRatio * 100)}%`,
-      contribution: Math.min(42, feature.rapidFlowRatio * 35),
-      reason: "A high share of deposited cash left the account shortly afterward.",
+      value: `${round(feature.rapidCashOutRatio * 100)}%`,
+      contribution: Math.min(42, feature.rapidCashOutRatio * 35),
+      reason:
+        "A high share of deposited cash left the account within 48 hours.",
     },
     {
       feature: "compressed_window",
       value: `${feature.activeSpanDays} days`,
       contribution: feature.activeSpanDays <= 3 ? 25 : 14,
-      reason: "Cash-in and cash-out activity occurred in a compressed period.",
+      reason:
+        "Cash-in and cash-out activity occurred in a verified rolling window.",
     },
   ];
   return candidate(feature, "rapid_cash_out", contributions, [
-    `$${round(feature.cashDepositAmount).toLocaleString("en-US")} cash deposited`,
-    `$${round(feature.outboundAmount).toLocaleString("en-US")} moved out`,
-    `${round(feature.rapidFlowRatio * 100)}% flow-through`,
+    `₹${round(feature.cashDepositAmount).toLocaleString("en-IN")} cash deposited`,
+    `₹${round(feature.rapidCashOutAmount).toLocaleString("en-IN")} moved out within 48 hours`,
+    `${round(feature.rapidCashOutRatio * 100)}% rapid cash-out ratio`,
   ]);
 }
 
 function detectVelocity(
   feature: CustomerFeatures,
 ): DetectorCandidate | undefined {
-  if (feature.maxDailyCount < 6 && feature.countRobustZ < 3) return undefined;
+  if (feature.rolling24HourCount < 6 && feature.countRobustZ < 3) {
+    return undefined;
+  }
   const contributions: FeatureContribution[] = [
     {
-      feature: "peak_daily_transactions",
-      value: feature.maxDailyCount,
-      contribution: Math.min(35, feature.maxDailyCount * 4),
-      reason: `${feature.maxDailyCount} transactions occurred on the busiest day.`,
+      feature: "rolling_24h_transaction_count",
+      value: feature.rolling24HourCount,
+      contribution: Math.min(35, feature.rolling24HourCount * 4),
+      reason: `${feature.rolling24HourCount} transactions occurred within a rolling 24-hour window.`,
     },
     {
       feature: "count_robust_z",
@@ -255,7 +260,8 @@ function detectVelocity(
     },
   ];
   return candidate(feature, "unusual_velocity", contributions, [
-    `peak of ${feature.maxDailyCount} transactions in one day`,
+    `peak of ${feature.rolling24HourCount} transactions in a rolling 24-hour window`,
+    `₹${round(feature.rolling7DayAmount).toLocaleString("en-IN")} maximum rolling 7-day volume`,
     `frequency robust z-score ${round(feature.countRobustZ, 2)}`,
   ]);
 }
@@ -333,6 +339,7 @@ export function scoreCandidates(
 export function toFinding(
   candidateValue: DetectorCandidate & { riskScore: number },
   policy: AmlPolicy = DEFAULT_AML_POLICY,
+  parsedQuery?: ParsedQuery,
 ): RiskFinding {
   const sorted = [...candidateValue.transactions].sort((a, b) =>
     a.timestamp.localeCompare(b.timestamp),
@@ -353,6 +360,20 @@ export function toFinding(
         ? "review"
         : "monitor";
   const patternLabel = candidateValue.pattern.replaceAll("_", " ");
+  const queryContext = parsedQuery
+    ? `For the request "${parsedQuery.raw}", `
+    : "";
+  const topTransactions = [...candidateValue.transactions]
+    .sort((left, right) => right.amount - left.amount)
+    .slice(0, 5)
+    .map((transaction) => ({
+      id: transaction.id,
+      timestamp: transaction.timestamp,
+      amount: transaction.amount,
+      currency: transaction.currency,
+      type: transaction.type,
+      country: transaction.country,
+    }));
 
   return {
     entityType: "customer",
@@ -368,8 +389,9 @@ export function toFinding(
     windowEnd: last,
     evidence: candidateValue.evidence,
     contributions: candidateValue.contributions,
-    explanation: `The detector flagged ${candidateValue.customerId} for ${patternLabel}. ${candidateValue.evidence.join("; ")}. The score is advisory and requires analyst validation.`,
+    explanation: `${queryContext}the detector flagged ${candidateValue.customerId} for ${patternLabel}. ${candidateValue.evidence.join("; ")}. The score is advisory and requires analyst validation.`,
     recommendedAction: action,
     transactionIds: candidateValue.transactions.map((item) => item.id),
+    topTransactions,
   };
 }

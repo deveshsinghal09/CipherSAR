@@ -54,6 +54,15 @@ export function buildExecutionPlan(parsed: ParsedQuery): ExecutionPlan {
           "The request targets one entity, so scan only that customer's activity.",
           parsed.filters.customerId ?? "requested customer",
         ),
+        ...(hasContextualFilters(parsed)
+          ? [
+              step(
+                "filter_transactions",
+                "Apply the requested date, segment, country, transaction-type, and amount constraints to this customer only.",
+                summarizeFilters(parsed),
+              ),
+            ]
+          : []),
         step(
           "engineer_structuring_features",
           "Check threshold proximity, branch spread, and repeated cash behavior on demand.",
@@ -194,13 +203,19 @@ function summarizeFilters(parsed: ParsedQuery): string {
   const parts: string[] = [];
   if (filters.lastDays) parts.push(`last ${filters.lastDays} days`);
   if (filters.customerId) parts.push(`customer ${filters.customerId}`);
-  if (filters.amountBelow !== undefined) parts.push(`< $${filters.amountBelow}`);
-  if (filters.amountAbove !== undefined) parts.push(`> $${filters.amountAbove}`);
+  if (filters.amountBelow !== undefined) parts.push(`< ₹${filters.amountBelow}`);
+  if (filters.amountAbove !== undefined) parts.push(`> ₹${filters.amountAbove}`);
   if (filters.minimumTransactions) parts.push(`${filters.minimumTransactions}+ tx`);
   if (filters.transactionType) parts.push(filters.transactionType);
   if (filters.segment) parts.push(filters.segment);
   if (filters.country) parts.push(filters.country);
   return parts.join(" · ") || "full requested scope";
+}
+
+function hasContextualFilters(parsed: ParsedQuery): boolean {
+  return Object.entries(parsed.filters).some(
+    ([field, value]) => field !== "customerId" && value !== undefined,
+  );
 }
 
 function planRationale(parsed: ParsedQuery): string {
@@ -241,4 +256,3 @@ function skippedReason(tool: ToolName, parsed: ParsedQuery): string {
   }
   return `Skipped because ${tool.replaceAll("_", " ")} is not relevant to this intent.`;
 }
-

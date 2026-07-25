@@ -13,6 +13,8 @@ export interface CustomerFeatures {
   countryCount: number;
   counterpartyCount: number;
   maxDailyCount: number;
+  rolling24HourCount: number;
+  rolling7DayAmount: number;
   cashDepositCount: number;
   nearThresholdCount: number;
   smallCashCount: number;
@@ -22,6 +24,9 @@ export interface CustomerFeatures {
   wireInCount: number;
   wireOutCount: number;
   rapidFlowRatio: number;
+  rapidCashOutAmount: number;
+  rapidCashOutRatio: number;
+  amountDeviationRatio: number;
   countRobustZ: number;
   volumeRobustZ: number;
   medianAmountRobustZ: number;
@@ -101,13 +106,22 @@ function basicFeatures(
       .map((item) => item.amount),
   );
   const outboundAmount = sum(outbound.map((item) => item.amount));
+  const rapidOutbound = outbound.filter((outboundTransaction) => {
+    const outboundAt = new Date(outboundTransaction.timestamp).getTime();
+    return cashDeposits.some((deposit) => {
+      const elapsed = outboundAt - new Date(deposit.timestamp).getTime();
+      return elapsed >= 0 && elapsed <= 48 * 60 * 60 * 1_000;
+    });
+  });
+  const rapidCashOutAmount = sum(rapidOutbound.map((item) => item.amount));
+  const medianTransactionAmount = median(amounts);
 
   return {
     customerId,
     transactions,
     transactionCount: transactions.length,
     totalAmount: sum(amounts),
-    medianAmount: median(amounts),
+    medianAmount: medianTransactionAmount,
     activeDays: new Set(dates).size,
     activeSpanDays,
     branchCount: new Set(
@@ -121,6 +135,11 @@ function basicFeatures(
         .filter(Boolean),
     ).size,
     maxDailyCount: Math.max(0, ...dateCounts.values()),
+    rolling24HourCount: maxRollingCount(transactions, 24 * 60 * 60 * 1_000),
+    rolling7DayAmount: maxRollingAmount(
+      transactions,
+      7 * 24 * 60 * 60 * 1_000,
+    ),
     cashDepositCount: cashDeposits.length,
     nearThresholdCount: cashDeposits.filter(
       (transaction) => transaction.amount >= 8_000 && transaction.amount < 10_000,
@@ -135,5 +154,55 @@ function basicFeatures(
     wireOutCount: transactions.filter((item) => item.type === "wire_out").length,
     rapidFlowRatio:
       inboundAmount > 0 ? Math.min(2, outboundAmount / inboundAmount) : 0,
+    rapidCashOutAmount,
+    rapidCashOutRatio:
+      cashDepositAmount > 0
+        ? Math.min(2, rapidCashOutAmount / cashDepositAmount)
+        : 0,
+    amountDeviationRatio:
+      medianTransactionAmount > 0
+        ? Math.max(...amounts) / medianTransactionAmount
+        : 0,
   };
+}
+
+function maxRollingCount(
+  transactions: Transaction[],
+  windowMs: number,
+): number {
+  let left = 0;
+  let maximum = 0;
+  for (let right = 0; right < transactions.length; right += 1) {
+    const rightAt = new Date(transactions[right]!.timestamp).getTime();
+    while (
+      left < right &&
+      rightAt - new Date(transactions[left]!.timestamp).getTime() > windowMs
+    ) {
+      left += 1;
+    }
+    maximum = Math.max(maximum, right - left + 1);
+  }
+  return maximum;
+}
+
+function maxRollingAmount(
+  transactions: Transaction[],
+  windowMs: number,
+): number {
+  let left = 0;
+  let total = 0;
+  let maximum = 0;
+  for (let right = 0; right < transactions.length; right += 1) {
+    total += transactions[right]!.amount;
+    const rightAt = new Date(transactions[right]!.timestamp).getTime();
+    while (
+      left < right &&
+      rightAt - new Date(transactions[left]!.timestamp).getTime() > windowMs
+    ) {
+      total -= transactions[left]!.amount;
+      left += 1;
+    }
+    maximum = Math.max(maximum, total);
+  }
+  return maximum;
 }
