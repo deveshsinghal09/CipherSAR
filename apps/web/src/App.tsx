@@ -1,0 +1,917 @@
+import type {
+  InvestigationResponse,
+  RiskFinding,
+  ToolName,
+  Transaction,
+} from "@ciphersar/shared";
+import {
+  Activity,
+  AlertTriangle,
+  ArrowRight,
+  BarChart3,
+  Bell,
+  Check,
+  ChevronRight,
+  CircleDot,
+  Database,
+  FileCheck2,
+  FileSearch,
+  Fingerprint,
+  GitBranch,
+  LayoutDashboard,
+  LoaderCircle,
+  LockKeyhole,
+  Menu,
+  Network,
+  RefreshCw,
+  Search,
+  Settings,
+  ShieldCheck,
+  Sparkles,
+  UploadCloud,
+  Users,
+  X,
+} from "lucide-react";
+import {
+  type ChangeEvent,
+  type FormEvent,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import { runInvestigation } from "./api";
+
+const DEFAULT_QUERY = "Find structuring patterns in the last 30 days";
+const EXAMPLES = [
+  "Find structuring patterns in the last 30 days",
+  "Which customers made 10+ transactions under $10,000?",
+  "Is customer ID 4521 suspicious?",
+  "Analyse this dataset for suspicious activity",
+];
+
+const NAV_ITEMS = [
+  { label: "Command center", icon: LayoutDashboard, active: true },
+  { label: "Investigations", icon: FileSearch },
+  { label: "Review queue", icon: FileCheck2, count: 18 },
+  { label: "Customers", icon: Users },
+  { label: "Transactions", icon: Activity },
+  { label: "Datasets", icon: Database },
+];
+
+const TOOL_LABELS: Record<ToolName, string> = {
+  load_dataset: "Load dataset",
+  filter_transactions: "Apply query filters",
+  lookup_customer: "Customer lookup",
+  selective_eda: "Selective EDA",
+  aggregate_threshold_activity: "Threshold aggregation",
+  engineer_structuring_features: "Structuring features",
+  engineer_velocity_features: "Velocity features",
+  detect_pattern: "Pattern detector",
+  detect_general_anomalies: "Hybrid anomaly ensemble",
+  score_risk: "Risk calibration",
+  explain_findings: "Evidence explanation",
+  recommend_action: "Escalation recommendation",
+};
+
+export function App() {
+  const [query, setQuery] = useState(DEFAULT_QUERY);
+  const [result, setResult] = useState<InvestigationResponse | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [importedTransactions, setImportedTransactions] = useState<Transaction[]>([]);
+  const [datasetName, setDatasetName] = useState("Global retail transactions");
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const hasBootstrapped = useRef(false);
+
+  const investigate = useCallback(
+    async (
+      nextQuery: string,
+      transactions: Transaction[] = importedTransactions,
+    ) => {
+      setLoading(true);
+      setError(null);
+      try {
+        const response = await runInvestigation({
+          query: nextQuery,
+          ...(transactions.length ? { transactions } : {}),
+        });
+        setResult(response);
+        setSelectedId(response.findings[0]?.entityId ?? null);
+      } catch (caught) {
+        setError(caught instanceof Error ? caught.message : "Unexpected error");
+      } finally {
+        setLoading(false);
+      }
+    },
+    [importedTransactions],
+  );
+
+  useEffect(() => {
+    if (hasBootstrapped.current) return;
+    hasBootstrapped.current = true;
+    void investigate(DEFAULT_QUERY, []);
+  }, [investigate]);
+
+  const selected = useMemo(
+    () =>
+      result?.findings.find((finding) => finding.entityId === selectedId) ??
+      result?.findings[0] ??
+      null,
+    [result, selectedId],
+  );
+
+  const onSubmit = (event: FormEvent) => {
+    event.preventDefault();
+    if (query.trim().length >= 3) void investigate(query.trim());
+  };
+
+  const onImport = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    try {
+      const transactions = parseTransactionsCsv(await file.text());
+      setImportedTransactions(transactions);
+      setDatasetName(file.name);
+      await investigate(query, transactions);
+    } catch (caught) {
+      setError(
+        caught instanceof Error
+          ? caught.message
+          : "The CSV could not be imported.",
+      );
+    } finally {
+      event.target.value = "";
+    }
+  };
+
+  return (
+    <div className="app-shell">
+      <aside className={`sidebar ${mobileNavOpen ? "sidebar--open" : ""}`}>
+        <div className="brand">
+          <div className="brand__mark" aria-hidden="true">
+            <ShieldCheck size={20} strokeWidth={2.25} />
+          </div>
+          <div>
+            <strong>CipherSAR</strong>
+            <span>Veyra Bank · FCC</span>
+          </div>
+          <button
+            className="icon-button sidebar__close"
+            onClick={() => setMobileNavOpen(false)}
+            aria-label="Close navigation"
+          >
+            <X size={18} />
+          </button>
+        </div>
+
+        <nav aria-label="Primary navigation">
+          <span className="nav-heading">Workspace</span>
+          {NAV_ITEMS.map(({ label, icon: Icon, active, count }) => (
+            <button
+              className={`nav-item ${active ? "nav-item--active" : ""}`}
+              key={label}
+              type="button"
+            >
+              <Icon size={18} />
+              <span>{label}</span>
+              {count ? <em>{count}</em> : null}
+            </button>
+          ))}
+          <span className="nav-heading nav-heading--spaced">System</span>
+          <button className="nav-item" type="button">
+            <GitBranch size={18} />
+            <span>Audit trail</span>
+          </button>
+          <button className="nav-item" type="button">
+            <Settings size={18} />
+            <span>Policy settings</span>
+          </button>
+        </nav>
+
+        <div className="security-card">
+          <div className="security-card__icon">
+            <LockKeyhole size={17} />
+          </div>
+          <div>
+            <strong>Decision support only</strong>
+            <span>Human review is required before escalation.</span>
+          </div>
+        </div>
+
+        <div className="analyst-card">
+          <div className="avatar">DS</div>
+          <div>
+            <strong>Devesh Singhal</strong>
+            <span>AML analyst</span>
+          </div>
+          <ChevronRight size={16} />
+        </div>
+      </aside>
+
+      {mobileNavOpen ? (
+        <button
+          className="nav-scrim"
+          aria-label="Close navigation"
+          onClick={() => setMobileNavOpen(false)}
+        />
+      ) : null}
+
+      <div className="workspace">
+        <header className="topbar">
+          <button
+            className="icon-button menu-button"
+            onClick={() => setMobileNavOpen(true)}
+            aria-label="Open navigation"
+          >
+            <Menu size={20} />
+          </button>
+          <div className="dataset-status">
+            <Database size={16} />
+            <div>
+              <span>Active dataset</span>
+              <strong>{datasetName}</strong>
+            </div>
+            <span className="live-dot">Live</span>
+          </div>
+          <div className="topbar__actions">
+            <span className="sync-status">
+              <RefreshCw size={14} /> Synced 2m ago
+            </span>
+            <button className="icon-button" aria-label="Notifications">
+              <Bell size={18} />
+              <i />
+            </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".csv,text/csv"
+              hidden
+              onChange={(event) => void onImport(event)}
+            />
+            <button
+              className="button button--quiet"
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+            >
+              <UploadCloud size={16} /> Import data
+            </button>
+          </div>
+        </header>
+
+        <main>
+          <section className="page-intro">
+            <div>
+              <span className="eyebrow">
+                <Sparkles size={14} /> Adaptive investigation agent
+              </span>
+              <h1>Investigate the signal.<br />Explain the decision.</h1>
+              <p>
+                Ask a compliance question in plain language. CipherSAR chooses
+                the minimum necessary tools and returns evidence you can defend.
+              </p>
+            </div>
+            <div className="trust-chip">
+              <ShieldCheck size={18} />
+              <div>
+                <span>Governance status</span>
+                <strong>Controls active</strong>
+              </div>
+            </div>
+          </section>
+
+          <section className="command-card" aria-labelledby="command-heading">
+            <div className="command-card__top">
+              <div className="agent-orb" aria-hidden="true">
+                <Network size={22} />
+              </div>
+              <div>
+                <h2 id="command-heading">What should I investigate?</h2>
+                <span>
+                  Intent, filters, entities, and AML typologies are parsed automatically.
+                </span>
+              </div>
+            </div>
+            <form className="command-form" onSubmit={onSubmit}>
+              <Search size={20} aria-hidden="true" />
+              <input
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder="e.g. Find structuring patterns in the last 30 days"
+                aria-label="Investigation query"
+              />
+              <button className="button button--primary" disabled={loading}>
+                {loading ? (
+                  <LoaderCircle className="spin" size={17} />
+                ) : (
+                  <Fingerprint size={17} />
+                )}
+                {loading ? "Investigating" : "Investigate"}
+              </button>
+            </form>
+            <div className="query-examples">
+              <span>Try asking</span>
+              {EXAMPLES.slice(0, 3).map((example) => (
+                <button
+                  type="button"
+                  key={example}
+                  onClick={() => {
+                    setQuery(example);
+                    void investigate(example);
+                  }}
+                >
+                  {shortenExample(example)}
+                </button>
+              ))}
+            </div>
+          </section>
+
+          {error ? (
+            <section className="error-state" role="alert">
+              <AlertTriangle size={20} />
+              <div>
+                <strong>Investigation interrupted</strong>
+                <span>{error}</span>
+              </div>
+              <button
+                type="button"
+                className="button button--quiet"
+                onClick={() => void investigate(query)}
+              >
+                Retry
+              </button>
+            </section>
+          ) : null}
+
+          {loading && !result ? <DashboardSkeleton /> : null}
+          {result ? (
+            <>
+              <Metrics result={result} />
+
+              <section className="investigation-grid">
+                <PlanPanel result={result} loading={loading} />
+                <RiskOverview findings={result.findings} />
+              </section>
+
+              <section className="results-layout">
+                <FindingsTable
+                  findings={result.findings}
+                  selectedId={selected?.entityId ?? null}
+                  onSelect={setSelectedId}
+                />
+                <EvidencePanel finding={selected} />
+              </section>
+
+              {result.eda ? <EdaPanel result={result} /> : null}
+            </>
+          ) : null}
+        </main>
+
+        <footer>
+          <div className="footer-brand">
+            <ShieldCheck size={17} />
+            <strong>Veyra Bank</strong>
+            <span>Financial Crime Compliance</span>
+          </div>
+          <div>
+            <span>CipherSAR v0.1</span>
+            <span>·</span>
+            <span>Model governance</span>
+            <span>·</span>
+            <span>Privacy</span>
+            <span>·</span>
+            <span>Audit controls</span>
+          </div>
+        </footer>
+      </div>
+    </div>
+  );
+}
+
+function Metrics({ result }: { result: InvestigationResponse }) {
+  const items = [
+    {
+      label: "Transactions scoped",
+      value: result.metrics.analyzedTransactions.toLocaleString(),
+      note: `${result.metrics.inputTransactions} available`,
+      icon: Activity,
+      tone: "lime",
+    },
+    {
+      label: "Entities analysed",
+      value: result.metrics.analyzedCustomers.toLocaleString(),
+      note: "query-specific scope",
+      icon: Users,
+      tone: "teal",
+    },
+    {
+      label: "High-risk findings",
+      value: result.metrics.highRiskEntities.toString(),
+      note: `${result.metrics.flaggedEntities} total flagged`,
+      icon: AlertTriangle,
+      tone: "coral",
+    },
+    {
+      label: "Agent runtime",
+      value: `${result.metrics.executionTimeMs}ms`,
+      note: `${result.plan.steps.length} tools invoked`,
+      icon: Activity,
+      tone: "amber",
+    },
+  ];
+
+  return (
+    <section className="metrics" aria-label="Investigation metrics">
+      {items.map(({ label, value, note, icon: Icon, tone }) => (
+        <article className="metric-card" key={label}>
+          <div className={`metric-card__icon tone-${tone}`}>
+            <Icon size={18} />
+          </div>
+          <div>
+            <span>{label}</span>
+            <strong>{value}</strong>
+            <small>{note}</small>
+          </div>
+        </article>
+      ))}
+    </section>
+  );
+}
+
+function PlanPanel({
+  result,
+  loading,
+}: {
+  result: InvestigationResponse;
+  loading: boolean;
+}) {
+  return (
+    <section className="panel plan-panel">
+      <header className="panel__header">
+        <div>
+          <span className="section-kicker">Agent decision trace</span>
+          <h2>Dynamic execution plan</h2>
+        </div>
+        <span className={`status-pill ${loading ? "status-pill--running" : ""}`}>
+          {loading ? <LoaderCircle className="spin" size={13} /> : <Check size={13} />}
+          {loading ? "Running" : "Completed"}
+        </span>
+      </header>
+      <div className="interpretation">
+        <CircleDot size={16} />
+        <div>
+          <span>Parsed intent · {result.parsedQuery.intent.replaceAll("_", " ")}</span>
+          <strong>{result.parsedQuery.interpretation}</strong>
+        </div>
+        <em>{Math.round(result.parsedQuery.confidence * 100)}%</em>
+      </div>
+      <p className="plan-rationale">{result.plan.rationale}</p>
+      <ol className="plan-steps">
+        {result.plan.steps.map((step, index) => (
+          <li key={step.id}>
+            <div className="step-index">
+              {step.status === "completed" ? <Check size={13} /> : index + 1}
+            </div>
+            <div className="step-copy">
+              <div>
+                <strong>{TOOL_LABELS[step.tool]}</strong>
+                <span>{step.durationMs ?? "—"}ms</span>
+              </div>
+              <p>{step.reason}</p>
+              <small>{step.outputSummary}</small>
+            </div>
+          </li>
+        ))}
+      </ol>
+      {result.plan.skippedTools.length ? (
+        <details className="skipped-tools">
+          <summary>
+            {result.plan.skippedTools.length} tools intentionally skipped
+          </summary>
+          {result.plan.skippedTools.map((item) => (
+            <div key={item.tool}>
+              <span>{TOOL_LABELS[item.tool]}</span>
+              <p>{item.reason}</p>
+            </div>
+          ))}
+        </details>
+      ) : null}
+    </section>
+  );
+}
+
+function RiskOverview({ findings }: { findings: RiskFinding[] }) {
+  const high = findings.filter((finding) => finding.riskLevel === "high").length;
+  const medium = findings.filter(
+    (finding) => finding.riskLevel === "medium",
+  ).length;
+  const low = findings.filter((finding) => finding.riskLevel === "low").length;
+  const total = Math.max(1, findings.length);
+  return (
+    <section className="panel risk-overview">
+      <header className="panel__header">
+        <div>
+          <span className="section-kicker">Population view</span>
+          <h2>Risk distribution</h2>
+        </div>
+        <BarChart3 size={19} />
+      </header>
+      <div className="risk-donut-wrap">
+        <div
+          className="risk-donut"
+          style={{
+            background: `conic-gradient(var(--danger) 0 ${(high / total) * 100}%, var(--warning) ${(high / total) * 100}% ${((high + medium) / total) * 100}%, var(--low) ${((high + medium) / total) * 100}% 100%)`,
+          }}
+        >
+          <div>
+            <strong>{findings.length}</strong>
+            <span>flagged</span>
+          </div>
+        </div>
+        <div className="risk-legend">
+          <RiskLegend tone="high" label="High risk" value={high} total={total} />
+          <RiskLegend tone="medium" label="Medium risk" value={medium} total={total} />
+          <RiskLegend tone="low" label="Low risk" value={low} total={total} />
+        </div>
+      </div>
+      <div className="pattern-list">
+        {patternCounts(findings).slice(0, 4).map(([pattern, count]) => (
+          <div key={pattern}>
+            <span>{pattern.replaceAll("_", " ")}</span>
+            <div><i style={{ width: `${Math.max(10, (count / total) * 100)}%` }} /></div>
+            <strong>{count}</strong>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function RiskLegend({
+  tone,
+  label,
+  value,
+  total,
+}: {
+  tone: string;
+  label: string;
+  value: number;
+  total: number;
+}) {
+  return (
+    <div>
+      <i className={`legend-dot legend-dot--${tone}`} />
+      <span>{label}</span>
+      <strong>{value}</strong>
+      <em>{Math.round((value / total) * 100)}%</em>
+    </div>
+  );
+}
+
+function FindingsTable({
+  findings,
+  selectedId,
+  onSelect,
+}: {
+  findings: RiskFinding[];
+  selectedId: string | null;
+  onSelect: (id: string) => void;
+}) {
+  return (
+    <section className="panel findings-panel">
+      <header className="panel__header">
+        <div>
+          <span className="section-kicker">Prioritised results</span>
+          <h2>Suspicious entities</h2>
+        </div>
+        <button
+          className="button button--quiet"
+          type="button"
+          disabled={!findings.length}
+          onClick={() => exportFindings(findings)}
+        >
+          Export evidence
+        </button>
+      </header>
+      {findings.length ? (
+        <div className="table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>Customer</th>
+                <th>Risk</th>
+                <th>Detected pattern</th>
+                <th>Activity</th>
+                <th>Action</th>
+                <th aria-label="Open" />
+              </tr>
+            </thead>
+            <tbody>
+              {findings.map((finding) => (
+                <tr
+                  className={selectedId === finding.entityId ? "selected-row" : ""}
+                  key={finding.entityId}
+                  onClick={() => onSelect(finding.entityId)}
+                >
+                  <td>
+                    <strong>{finding.customerId}</strong>
+                    <span>{finding.transactionCount} transactions</span>
+                  </td>
+                  <td>
+                    <span className={`risk-badge risk-badge--${finding.riskLevel}`}>
+                      {finding.riskScore} · {finding.riskLevel}
+                    </span>
+                  </td>
+                  <td>
+                    <strong className="pattern-name">
+                      {finding.pattern.replaceAll("_", " ")}
+                    </strong>
+                    <span>{Math.round(finding.confidence * 100)}% confidence</span>
+                  </td>
+                  <td>
+                    <strong>
+                      ${finding.aggregateAmount.toLocaleString("en-US")}
+                    </strong>
+                    <span>{dateSpan(finding)}</span>
+                  </td>
+                  <td>
+                    <span className="action-label">
+                      {finding.recommendedAction}
+                    </span>
+                  </td>
+                  <td><ChevronRight size={16} /></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        <div className="empty-state">
+          <ShieldCheck size={28} />
+          <strong>No entities crossed the current evidence threshold</strong>
+          <span>Try broadening the date range or asking for a different pattern.</span>
+        </div>
+      )}
+    </section>
+  );
+}
+
+function EvidencePanel({ finding }: { finding: RiskFinding | null }) {
+  if (!finding) {
+    return (
+      <aside className="panel evidence-panel empty-state">
+        <FileSearch size={28} />
+        <strong>Select a finding</strong>
+        <span>Evidence and score contributions will appear here.</span>
+      </aside>
+    );
+  }
+  return (
+    <aside className="panel evidence-panel">
+      <div className="evidence-panel__top">
+        <div>
+          <span className="section-kicker">Why this was flagged</span>
+          <h2>{finding.customerId}</h2>
+        </div>
+        <div className={`score-orb score-orb--${finding.riskLevel}`}>
+          <strong>{finding.riskScore}</strong>
+          <span>/100</span>
+        </div>
+      </div>
+      <span className={`risk-banner risk-banner--${finding.riskLevel}`}>
+        <AlertTriangle size={15} />
+        {finding.riskLevel} risk · {finding.pattern.replaceAll("_", " ")}
+      </span>
+      <p className="explanation">{finding.explanation}</p>
+      <div className="evidence-facts">
+        {finding.evidence.map((fact) => (
+          <div key={fact}>
+            <Check size={14} />
+            <span>{fact}</span>
+          </div>
+        ))}
+      </div>
+      <div className="contributions">
+        <div className="contributions__heading">
+          <strong>Score contribution</strong>
+          <span>Evidence weight</span>
+        </div>
+        {finding.contributions.map((item) => (
+          <div className="contribution" key={item.feature}>
+            <div>
+              <span>{item.feature.replaceAll("_", " ")}</span>
+              <strong>+{Math.round(item.contribution)}</strong>
+            </div>
+            <div className="contribution__bar">
+              <i style={{ width: `${Math.min(100, item.contribution * 2.2)}%` }} />
+            </div>
+            <small>{item.reason}</small>
+          </div>
+        ))}
+      </div>
+      <div className="evidence-meta">
+        <span>Confidence <strong>{Math.round(finding.confidence * 100)}%</strong></span>
+        <span>Window <strong>{dateSpan(finding)}</strong></span>
+      </div>
+      <div className="evidence-actions">
+        <button className="button button--quiet" type="button">Monitor</button>
+        <button className="button button--primary" type="button">
+          Send to review <ArrowRight size={16} />
+        </button>
+      </div>
+      <p className="human-note">
+        <LockKeyhole size={13} /> Recommendation is advisory. Analyst approval is required.
+      </p>
+    </aside>
+  );
+}
+
+function EdaPanel({ result }: { result: InvestigationResponse }) {
+  if (!result.eda) return null;
+  return (
+    <section className="panel eda-panel">
+      <header className="panel__header">
+        <div>
+          <span className="section-kicker">Selective EDA</span>
+          <h2>Dataset baseline</h2>
+        </div>
+        <span className="status-pill"><Check size={13} /> Quality checked</span>
+      </header>
+      <div className="eda-grid">
+        <div><span>Total volume</span><strong>${result.eda.totalVolume.toLocaleString()}</strong></div>
+        <div><span>Median amount</span><strong>${result.eda.medianAmount.toLocaleString()}</strong></div>
+        <div><span>Customer count</span><strong>{result.eda.customerCount}</strong></div>
+        <div><span>Quality issues</span><strong>{Object.values(result.eda.dataQuality).reduce((a, b) => a + b, 0)}</strong></div>
+      </div>
+    </section>
+  );
+}
+
+function DashboardSkeleton() {
+  return (
+    <div className="dashboard-skeleton" aria-label="Loading investigation">
+      <div /><div /><div /><div />
+      <section /><section />
+    </div>
+  );
+}
+
+function shortenExample(example: string): string {
+  if (example.includes("structuring")) return "Structuring · 30 days";
+  if (example.includes("10+")) return "10+ under $10k";
+  if (example.includes("4521")) return "Customer 4521";
+  return example;
+}
+
+function dateSpan(finding: RiskFinding): string {
+  const start = new Date(finding.windowStart);
+  const end = new Date(finding.windowEnd);
+  const days = Math.max(
+    1,
+    Math.ceil((end.getTime() - start.getTime()) / 86_400_000) + 1,
+  );
+  return `${days} day${days === 1 ? "" : "s"}`;
+}
+
+function patternCounts(findings: RiskFinding[]): Array<[string, number]> {
+  const counts = new Map<string, number>();
+  for (const finding of findings) {
+    counts.set(finding.pattern, (counts.get(finding.pattern) ?? 0) + 1);
+  }
+  return [...counts.entries()].sort((left, right) => right[1] - left[1]);
+}
+
+const TRANSACTION_TYPES = new Set<Transaction["type"]>([
+  "cash_deposit",
+  "cash_withdrawal",
+  "wire_in",
+  "wire_out",
+  "card",
+  "ach",
+]);
+
+function parseTransactionsCsv(source: string): Transaction[] {
+  const rows = parseCsv(source);
+  if (rows.length < 2) {
+    throw new Error("CSV must contain a header and at least one transaction.");
+  }
+  const headers = (rows[0] ?? []).map((header) =>
+    header.trim().toLowerCase().replaceAll(" ", "_"),
+  );
+  const get = (row: string[], ...names: string[]) => {
+    const index = names
+      .map((name) => headers.indexOf(name))
+      .find((candidate) => candidate >= 0);
+    return index === undefined ? "" : (row[index] ?? "").trim();
+  };
+
+  const transactions = rows.slice(1).filter((row) => row.some(Boolean)).map(
+    (row, index): Transaction => {
+      const id = get(row, "id", "transaction_id", "transactionid");
+      const customerId = get(row, "customer_id", "customerid");
+      const timestampValue = get(row, "timestamp", "date", "transaction_date");
+      const amount = Number(get(row, "amount", "transaction_amount"));
+      const typeValue = get(row, "type", "transaction_type") as Transaction["type"];
+      const timestamp = new Date(timestampValue);
+
+      if (!id || !customerId || !Number.isFinite(amount) || timestamp.toString() === "Invalid Date") {
+        throw new Error(
+          `CSV row ${index + 2} needs a valid id, customer_id, timestamp, and amount.`,
+        );
+      }
+      if (!TRANSACTION_TYPES.has(typeValue)) {
+        throw new Error(
+          `CSV row ${index + 2} has unsupported type "${typeValue}".`,
+        );
+      }
+
+      const segmentValue = get(row, "segment") as Transaction["segment"];
+      const channelValue = get(row, "channel") as Transaction["channel"];
+      return {
+        id,
+        customerId,
+        timestamp: timestamp.toISOString(),
+        amount,
+        currency: (get(row, "currency") || "USD").toUpperCase(),
+        type: typeValue,
+        country: (get(row, "country") || "US").toUpperCase(),
+        segment: ["retail", "business", "private"].includes(segmentValue)
+          ? segmentValue
+          : "retail",
+        channel: ["branch", "online", "mobile", "atm"].includes(channelValue)
+          ? channelValue
+          : "online",
+        ...(get(row, "branch_id", "branchid")
+          ? { branchId: get(row, "branch_id", "branchid") }
+          : {}),
+        ...(get(row, "counterparty_id", "counterpartyid")
+          ? { counterpartyId: get(row, "counterparty_id", "counterpartyid") }
+          : {}),
+      };
+    },
+  );
+
+  if (transactions.length > 100_000) {
+    throw new Error("CSV exceeds the 100,000 transaction demo limit.");
+  }
+  return transactions;
+}
+
+function parseCsv(source: string): string[][] {
+  const rows: string[][] = [];
+  let row: string[] = [];
+  let field = "";
+  let quoted = false;
+
+  for (let index = 0; index < source.length; index += 1) {
+    const character = source[index] ?? "";
+    const next = source[index + 1] ?? "";
+    if (character === '"' && quoted && next === '"') {
+      field += '"';
+      index += 1;
+    } else if (character === '"') {
+      quoted = !quoted;
+    } else if (character === "," && !quoted) {
+      row.push(field);
+      field = "";
+    } else if ((character === "\n" || character === "\r") && !quoted) {
+      if (character === "\r" && next === "\n") index += 1;
+      row.push(field);
+      rows.push(row);
+      row = [];
+      field = "";
+    } else {
+      field += character;
+    }
+  }
+  row.push(field);
+  if (row.some(Boolean)) rows.push(row);
+  return rows;
+}
+
+function exportFindings(findings: RiskFinding[]): void {
+  const blob = new Blob(
+    [
+      JSON.stringify(
+        {
+          exportedAt: new Date().toISOString(),
+          purpose: "Analyst decision-support evidence",
+          humanReviewRequired: true,
+          findings,
+        },
+        null,
+        2,
+      ),
+    ],
+    { type: "application/json" },
+  );
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `ciphersar-evidence-${new Date().toISOString().slice(0, 10)}.json`;
+  link.click();
+  URL.revokeObjectURL(url);
+}
