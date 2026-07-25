@@ -1,9 +1,11 @@
 import type {
+  AmlPolicy,
   AmlPattern,
   FeatureContribution,
   RiskFinding,
   Transaction,
 } from "@ciphersar/shared";
+import { DEFAULT_AML_POLICY } from "@ciphersar/shared";
 import type { CustomerFeatures } from "./features";
 import { clamp, round } from "./statistics";
 
@@ -306,6 +308,7 @@ export function scoreCandidates(
 
 export function toFinding(
   candidateValue: DetectorCandidate & { riskScore: number },
+  policy: AmlPolicy = DEFAULT_AML_POLICY,
 ): RiskFinding {
   const sorted = [...candidateValue.transactions].sort((a, b) =>
     a.timestamp.localeCompare(b.timestamp),
@@ -313,15 +316,16 @@ export function toFinding(
   const first = sorted[0]?.timestamp ?? new Date(0).toISOString();
   const last = sorted.at(-1)?.timestamp ?? first;
   const riskLevel =
-    candidateValue.riskScore >= 70
+    candidateValue.riskScore >= policy.highRiskThreshold
       ? "high"
-      : candidateValue.riskScore >= 35
+      : candidateValue.riskScore >= policy.mediumRiskThreshold
         ? "medium"
         : "low";
   const action =
-    candidateValue.riskScore >= 85 && candidateValue.confidence >= 0.75
+    candidateValue.riskScore >= policy.reportThreshold &&
+    candidateValue.confidence >= policy.minimumReportConfidence
       ? "report"
-      : candidateValue.riskScore >= 60
+      : candidateValue.riskScore >= policy.reviewThreshold
         ? "review"
         : "monitor";
   const patternLabel = candidateValue.pattern.replaceAll("_", " ");
@@ -345,4 +349,3 @@ export function toFinding(
     transactionIds: candidateValue.transactions.map((item) => item.id),
   };
 }
-

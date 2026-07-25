@@ -38,6 +38,21 @@ const analyzeSchema = z.object({
   query: z.string().trim().min(3).max(1_000),
   transactions: z.array(transactionSchema).max(100_000).optional(),
   customers: z.array(customerSchema).max(100_000).optional(),
+  policy: z
+    .object({
+      mediumRiskThreshold: z.number().min(1).max(99),
+      highRiskThreshold: z.number().min(1).max(100),
+      reviewThreshold: z.number().min(1).max(100),
+      reportThreshold: z.number().min(1).max(100),
+      minimumReportConfidence: z.number().min(0).max(1),
+    })
+    .refine(
+      (policy) =>
+        policy.mediumRiskThreshold < policy.highRiskThreshold &&
+        policy.reviewThreshold <= policy.reportThreshold,
+      "Policy thresholds must be ordered from lower to higher severity.",
+    )
+    .optional(),
 });
 
 export function createApp(): express.Express {
@@ -80,6 +95,17 @@ export function createApp(): express.Express {
     });
   });
 
+  app.get("/api/dataset", (_request, response) => {
+    const sample = createSampleDataset();
+    response.json({
+      name: "CipherSAR Synthetic Retail Banking Dataset",
+      source: "Deterministically generated synthetic data",
+      customers: sample.customers,
+      transactions: sample.transactions,
+      knownDemoPatterns: ["structuring", "smurfing", "layering"],
+    });
+  });
+
   app.post("/api/investigations", async (request, response, next) => {
     try {
       const parsed = analyzeSchema.parse(request.body);
@@ -115,4 +141,3 @@ export function createApp(): express.Express {
 
   return app;
 }
-

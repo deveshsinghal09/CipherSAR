@@ -258,6 +258,128 @@ td span { margin-top: 3px; color: var(--text-3); font-size: 8px; }
 .dashboard-skeleton div, .dashboard-skeleton section { min-height: 78px; border-radius: 15px; background: linear-gradient(100deg, #101412 20%, #182019 50%, #101412 80%); background-size: 300% 100%; animation: shimmer 1.5s infinite; }
 .dashboard-skeleton section { grid-column: span 2; min-height: 330px; }
 .spin { animation: spin 1s linear infinite; }
+
+.workspace-view { display: grid; gap: 16px; }
+.workspace-view__header {
+  display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center;
+  gap: 15px; margin-bottom: 6px; padding: 4px 0 12px;
+}
+.workspace-view__icon {
+  width: 48px; height: 48px; display: grid; place-items: center; border: 1px solid rgba(183,241,113,.16);
+  border-radius: 15px; color: var(--brand); background: var(--brand-soft);
+}
+.workspace-view__header h1 { margin: 7px 0 4px; font-size: clamp(27px, 3vw, 38px); letter-spacing: -.045em; }
+.workspace-view__header p { max-width: 780px; margin: 0; color: var(--text-2); font-size: 11px; line-height: 1.55; }
+.workspace-view__action { align-self: center; }
+.queue-count {
+  display: inline-flex; align-items: center; gap: 7px; padding: 8px 11px; border: 1px solid rgba(255,107,97,.2);
+  border-radius: 99px; color: var(--danger); background: rgba(255,107,97,.08); font: 600 9px "IBM Plex Mono";
+}
+.workspace-panel { min-width: 0; overflow: hidden; }
+.workspace-toolbar {
+  min-height: 62px; display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 11px 14px; border-bottom: 1px solid var(--border);
+}
+.workspace-toolbar > span { color: var(--text-3); font: 500 8px "IBM Plex Mono"; white-space: nowrap; }
+.workspace-search {
+  width: min(100%, 520px); min-height: 38px; display: flex; align-items: center; gap: 9px; padding: 0 11px;
+  border: 1px solid var(--border); border-radius: 10px; color: var(--text-3); background: rgba(255,255,255,.025);
+}
+.workspace-search input {
+  width: 100%; border: 0; outline: 0; background: transparent; color: var(--text); font-size: 10px;
+}
+.workspace-list { display: grid; }
+.workspace-row {
+  display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; align-items: center; gap: 14px;
+  padding: 15px 17px; border-bottom: 1px solid var(--border);
+}
+.workspace-row:last-child { border-bottom: 0; }
+.workspace-row__icon {
+  width: 37px; height: 37px; display: grid; place-items: center; border-radius: 11px;
+  color: var(--info); background: rgba(116,217,200,.08);
+}
+.workspace-row__main { min-width: 0; }
+.workspace-row__main > strong { display: block; overflow: hidden; color: var(--text); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+.workspace-row__main > span { display: block; margin-top: 4px; color: var(--text-3); font: 500 8px "IBM Plex Mono"; }
+.workspace-row__main p { margin: 6px 0 0; color: var(--text-2); font-size: 9px; line-height: 1.45; }
+.workspace-row__metrics { display: flex; gap: 15px; }
+.workspace-row__metrics span { display: grid; gap: 2px; color: var(--text-3); font-size: 8px; text-align: center; }
+.workspace-row__metrics strong { color: var(--text); font: 600 12px "IBM Plex Mono"; }
+.segmented-control { display: flex; flex-wrap: wrap; gap: 4px; }
+.segmented-control button {
+  min-height: 32px; padding: 0 10px; border: 1px solid transparent; border-radius: 8px;
+  background: transparent; color: var(--text-3); cursor: pointer; font-size: 8px; text-transform: capitalize;
+}
+.segmented-control button:hover { color: var(--text); }
+.segmented-control button.active { border-color: rgba(183,241,113,.14); color: var(--brand); background: var(--brand-soft); }
+.review-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; padding: 14px; }
+.review-card { padding: 15px; border: 1px solid var(--border); border-radius: 13px; background: rgba(255,255,255,.018); }
+.review-card__top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.review-card__top > div { display: grid; gap: 5px; }
+.review-card__top > div > strong { font: 600 13px "IBM Plex Mono"; }
+.review-card > p { min-height: 44px; margin: 11px 0; color: var(--text-2); font-size: 9px; line-height: 1.55; }
+.review-card__facts { display: flex; flex-wrap: wrap; gap: 6px; }
+.review-card__facts span { padding: 5px 7px; border-radius: 7px; color: var(--text-3); background: rgba(255,255,255,.035); font: 500 7px "IBM Plex Mono"; }
+.review-card__footer { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border); }
+.review-card__footer > div { display: flex; gap: 6px; }
+.review-status { padding: 5px 7px; border-radius: 99px; font: 600 7px "IBM Plex Mono"; text-transform: uppercase; }
+.review-status--pending { color: var(--warning); background: rgba(242,184,75,.09); }
+.review-status--in_review { color: var(--info); background: rgba(116,217,200,.09); }
+.review-status--resolved { color: var(--low); background: rgba(121,201,158,.09); }
+.workspace-table tbody tr { cursor: default; }
+.workspace-table td:last-child { text-align: right; }
+.workspace-table .button { min-height: 32px; padding-inline: 10px; font-size: 8px; white-space: nowrap; }
+.status-muted { display: inline-flex; width: max-content; color: var(--text-3); font: 500 8px "IBM Plex Mono"; }
+.type-chip { display: inline-flex; width: max-content; margin: 0; padding: 5px 7px; border-radius: 7px; color: var(--info); background: rgba(116,217,200,.08); font: 600 7px "IBM Plex Mono"; text-transform: capitalize; }
+.workspace-select {
+  min-height: 38px; display: flex; align-items: center; gap: 7px; padding: 0 10px;
+  border: 1px solid var(--border); border-radius: 10px; color: var(--text-3); background: rgba(255,255,255,.025);
+}
+.workspace-select select { border: 0; outline: 0; background: var(--surface); color: var(--text-2); font-size: 9px; }
+.result-limit { margin: 0; padding: 10px 14px; border-top: 1px solid var(--border); color: var(--text-3); font: 500 8px "IBM Plex Mono"; text-align: center; }
+.dataset-hero { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 15px; padding: 20px; }
+.dataset-hero__icon { width: 55px; height: 55px; display: grid; place-items: center; border-radius: 16px; color: var(--brand); background: var(--brand-soft); }
+.dataset-hero h2 { margin: 7px 0 4px; font-size: 18px; }
+.dataset-hero p { margin: 0; color: var(--text-3); font-size: 9px; }
+.dataset-metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.dataset-metrics article { display: grid; gap: 5px; padding: 16px; }
+.dataset-metrics span { color: var(--text-3); font-size: 8px; text-transform: uppercase; letter-spacing: .07em; }
+.dataset-metrics strong { font: 600 22px "IBM Plex Mono"; }
+.dataset-metrics small { color: var(--text-3); font-size: 8px; }
+.dataset-controls > div:last-child { display: grid; }
+.dataset-controls article { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 13px; padding: 16px 18px; border-bottom: 1px solid var(--border); color: var(--info); }
+.dataset-controls article:last-child { border-bottom: 0; }
+.dataset-controls article > div { display: grid; gap: 4px; }
+.dataset-controls article strong { color: var(--text); font-size: 10px; }
+.dataset-controls article span { max-width: 700px; color: var(--text-3); font-size: 8px; line-height: 1.45; }
+.audit-list { padding: 8px 18px 16px; }
+.audit-list article { position: relative; display: grid; grid-template-columns: auto 1fr; gap: 12px; padding: 12px 0; }
+.audit-list article:not(:last-child)::after { content:""; position:absolute; top: 29px; bottom: -6px; left: 4px; width: 1px; background: var(--border-strong); }
+.audit-dot { z-index: 1; width: 9px; height: 9px; margin-top: 5px; border: 2px solid var(--surface); border-radius: 50%; background: var(--text-3); box-shadow: 0 0 0 2px var(--border-strong); }
+.audit-dot--investigation { background: var(--brand); }
+.audit-dot--review { background: var(--danger); }
+.audit-dot--dataset { background: var(--info); }
+.audit-dot--policy { background: var(--warning); }
+.audit-list article > div:last-child > div { display: flex; justify-content: space-between; gap: 12px; }
+.audit-list strong { font-size: 10px; }
+.audit-list span { color: var(--text-3); font: 500 8px "IBM Plex Mono"; }
+.audit-list p { margin: 4px 0; color: var(--text-2); font-size: 9px; line-height: 1.5; }
+.audit-list small { color: var(--text-3); font: 500 7px "IBM Plex Mono"; text-transform: capitalize; }
+.policy-layout { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.policy-panel { overflow: hidden; }
+.policy-field { display: grid; grid-template-columns: minmax(0, 1fr) minmax(140px, .8fr) 48px; align-items: center; gap: 14px; padding: 16px 18px; border-bottom: 1px solid var(--border); }
+.policy-field:last-child { border-bottom: 0; }
+.policy-field > div { display: grid; gap: 4px; }
+.policy-field strong { font-size: 10px; }
+.policy-field span { color: var(--text-3); font-size: 8px; line-height: 1.4; }
+.policy-field input { width: 100%; accent-color: var(--brand); }
+.policy-field output { padding: 7px; border: 1px solid var(--border); border-radius: 8px; color: var(--brand); background: rgba(255,255,255,.025); font: 600 10px "IBM Plex Mono"; text-align: center; }
+.policy-summary { grid-column: 1 / -1; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 14px; padding: 18px; color: var(--info); }
+.policy-summary h2 { margin: 6px 0 4px; color: var(--text); font-size: 14px; }
+.policy-summary p { margin: 0; color: var(--text-2); font-size: 9px; line-height: 1.5; }
+.policy-summary__actions { display: flex; gap: 8px; }
+.policy-error { display: block; margin-top: 7px; color: var(--danger); font-size: 8px; }
+
 footer { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 20px 28px; border-top: 1px solid var(--border); color: var(--text-3); font-size: 8px; }
 .footer-brand, footer > div:last-child { display: flex; align-items: center; gap: 8px; }
 .footer-brand { color: var(--brand); }
@@ -271,6 +393,7 @@ footer { display: flex; align-items: center; justify-content: space-between; gap
   .metrics { grid-template-columns: repeat(2, 1fr); }
   .investigation-grid, .results-layout { grid-template-columns: 1fr; }
   .evidence-panel { position: static; }
+  .dataset-metrics { grid-template-columns: repeat(2, 1fr); }
 }
 @media (max-width: 780px) {
   .sidebar { transform: translateX(-102%); transition: transform 220ms ease; }
@@ -291,6 +414,15 @@ footer { display: flex; align-items: center; justify-content: space-between; gap
   .command-form input { min-height: 34px; }
   .command-form .button { width: 100%; }
   footer { flex-direction: column; align-items: flex-start; }
+  .workspace-view__header { grid-template-columns: auto 1fr; align-items: start; }
+  .workspace-view__action { grid-column: 1 / -1; }
+  .workspace-row { grid-template-columns: auto 1fr; }
+  .workspace-row__metrics, .workspace-row > .button { grid-column: 2; justify-self: start; }
+  .review-grid, .policy-layout { grid-template-columns: 1fr; }
+  .policy-summary { grid-column: auto; grid-template-columns: auto 1fr; }
+  .policy-summary__actions { grid-column: 1 / -1; }
+  .workspace-toolbar { align-items: stretch; flex-direction: column; }
+  .workspace-search { width: 100%; }
 }
 @media (max-width: 520px) {
   .metrics { grid-template-columns: 1fr; }
@@ -300,4 +432,12 @@ footer { display: flex; align-items: center; justify-content: space-between; gap
   .risk-donut { align-self: center; }
   .eda-grid { grid-template-columns: 1fr 1fr; }
   .eda-grid > div:nth-child(2) { border-right: 0; }
+  .dataset-metrics { grid-template-columns: 1fr; }
+  .dataset-hero { grid-template-columns: auto 1fr; }
+  .dataset-hero > .live-dot { grid-column: 1 / -1; justify-self: start; }
+  .dataset-controls article { grid-template-columns: auto 1fr; }
+  .dataset-controls article .button { grid-column: 1 / -1; }
+  .review-card__footer { align-items: flex-start; flex-direction: column; }
+  .policy-field { grid-template-columns: 1fr 52px; }
+  .policy-field input { grid-row: 2; grid-column: 1 / -1; }
 }

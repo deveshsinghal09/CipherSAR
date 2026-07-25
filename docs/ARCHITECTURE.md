@@ -13,6 +13,10 @@ CipherSAR is an agent-driven system, not a fixed ETL pipeline. The parser create
 5. Detectors emit candidates with evidence and individual score contributions.
 6. Risk calibration, explanations, and action recommendations are returned with the executed plan trace.
 
+The active `AmlPolicy` is sent with each investigation. Backend validation
+enforces ordered severity thresholds, and the detector uses the policy when
+assigning low/medium/high risk and monitor/review/report recommendations.
+
 ## Tool registry
 
 | Tool | Responsibility |

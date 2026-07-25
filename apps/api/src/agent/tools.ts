@@ -1,4 +1,5 @@
 import type {
+  AmlPolicy,
   Customer,
   EdaSummary,
   ParsedQuery,
@@ -22,6 +23,7 @@ import { mean, median, round, sum } from "../domain/statistics";
 
 export interface AgentContext {
   parsed: ParsedQuery;
+  policy: AmlPolicy;
   sourceTransactions: Transaction[];
   sourceCustomers: Customer[];
   transactions: Transaction[];
@@ -153,7 +155,9 @@ export const toolRegistry: Record<ToolName, ToolExecutor> = {
     };
   },
   explain_findings: async (context) => {
-    context.findings = context.scoredCandidates.map(toFinding);
+    context.findings = context.scoredCandidates.map((candidate) =>
+      toFinding(candidate, context.policy),
+    );
     return {
       outputSummary: `${context.findings.length} evidence-linked explanations generated`,
     };
@@ -237,4 +241,3 @@ function createEda(transactions: Transaction[]): EdaSummary {
     },
   };
 }
-

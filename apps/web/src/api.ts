@@ -1,5 +1,6 @@
 import type {
   AnalyzeRequest,
+  DatasetResponse,
   InvestigationResponse,
 } from "@ciphersar/shared";
 
@@ -29,4 +30,16 @@ export async function runInvestigation(
   }
 
   return payload as InvestigationResponse;
+}
+
+export async function getDataset(signal?: AbortSignal): Promise<DatasetResponse> {
+  const response = await fetch(
+    "/api/dataset",
+    signal ? { signal } : undefined,
+  );
+  const payload: unknown = await response.json();
+  if (!response.ok) {
+    throw new Error("The active dataset could not be loaded.");
+  }
+  return payload as DatasetResponse;
 }

@@ -4,6 +4,7 @@ import type {
   InvestigationResponse,
   PlanStep,
 } from "@ciphersar/shared";
+import { DEFAULT_AML_POLICY } from "@ciphersar/shared";
 import { createSampleDataset } from "../data/sample-data";
 import { buildExecutionPlan } from "./planner";
 import { parseQuery } from "./query-parser";
@@ -23,6 +24,7 @@ export class InvestigationAgent {
 
     const context: AgentContext = {
       parsed: parsedQuery,
+      policy: request.policy ?? DEFAULT_AML_POLICY,
       sourceTransactions,
       sourceCustomers,
       transactions: [],
@@ -70,6 +72,7 @@ export class InvestigationAgent {
           "Production deployment requires institution-specific calibration, validation, access control, and model governance.",
         ],
       },
+      policy: context.policy,
     };
   }
 
@@ -105,4 +108,3 @@ function createSummary(
   }
   return `The adaptive ${intent.replaceAll("_", " ")} produced ${findingCount} explainable finding${findingCount === 1 ? "" : "s"}, including ${highRiskCount} high-risk entit${highRiskCount === 1 ? "y" : "ies"}.`;
 }
-

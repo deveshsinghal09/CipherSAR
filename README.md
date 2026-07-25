@@ -6,6 +6,19 @@ CipherSAR turns a compliance analyst's natural-language question into a query-sp
 
 The interface is presented as an internal Financial Crime Compliance workspace for the fictional **Veyra Bank**. CipherSAR is decision-support software: every escalation requires human review.
 
+## Operational workspace
+
+The sidebar modules are fully functional:
+
+- **Command center** runs natural-language AML investigations and exposes the dynamic tool trace.
+- **Investigations** records completed runs and reopens their exact findings and plans.
+- **Review queue** tracks pending, in-review, resolved, and reopened findings with audit events.
+- **Customers** searches the active population and starts single-entity investigations.
+- **Transactions** searches and filters activity, highlights linked evidence, and pivots to customer review.
+- **Datasets** imports validated CSV data, reports coverage, and restores the deterministic demo dataset.
+- **Audit trail** records investigation, review, dataset, policy, and system events.
+- **Policy settings** changes the backend risk bands, escalation thresholds, and minimum report confidence for subsequent analysis.
+
 ## Why it exists
 
 Traditional AML systems often create large alert volumes through static rules. Investigators then spend time dismissing false positives while sophisticated structuring, smurfing, layering, velocity, and rapid cash-out behavior can cross multiple rules or channels.
@@ -153,6 +166,7 @@ Endpoints:
 - `GET /api/health`
 - `GET /api/examples`
 - `GET /api/dataset/summary`
+- `GET /api/dataset`
 - `POST /api/investigations`
 
 ## Docker
