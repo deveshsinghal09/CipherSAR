@@ -29,6 +29,7 @@ import {
   Users,
 } from "lucide-react";
 import { type FormEvent, useMemo, useState } from "react";
+import { EmptyState as Empty } from "./components/ui";
 
 export type WorkspaceView =
   | "command"
@@ -608,27 +609,27 @@ function CustomersView({
                   const finding = findingMap.get(customer.id);
                   return (
                     <tr key={customer.id}>
-                      <td>
+                      <td data-label="Customer">
                         <strong>{customer.name}</strong>
                         <span>{customer.id}</span>
                       </td>
-                      <td>
+                      <td data-label="Profile">
                         <strong>{customer.segment}</strong>
                         <span>
                           {customer.country} · {customer.riskRating}
                         </span>
                       </td>
-                      <td>
+                      <td data-label="Transactions">
                         <strong>{summary?.count ?? 0}</strong>
                         <span>recorded</span>
                       </td>
-                      <td>
+                      <td data-label="Volume">
                         <strong>
                           ${(summary?.volume ?? 0).toLocaleString("en-US")}
                         </strong>
                         <span>aggregate</span>
                       </td>
-                      <td>
+                      <td data-label="Current signal">
                         {finding ? (
                           <span
                             className={`risk-badge risk-badge--${finding.riskLevel}`}
@@ -639,7 +640,7 @@ function CustomersView({
                           <span className="status-muted">No active flag</span>
                         )}
                       </td>
-                      <td>
+                      <td data-label="Action">
                         <button
                           className="button button--quiet"
                           type="button"
@@ -748,29 +749,29 @@ function TransactionsView({
               <tbody>
                 {visible.map((transaction) => (
                   <tr key={transaction.id}>
-                    <td>
+                    <td data-label="Transaction">
                       <strong>{transaction.id}</strong>
                       <span>{formatDateTime(transaction.timestamp)}</span>
                     </td>
-                    <td>
+                    <td data-label="Customer">
                       <strong>{transaction.customerId}</strong>
                     </td>
-                    <td>
+                    <td data-label="Type">
                       <span className="type-chip">
                         {transaction.type.replaceAll("_", " ")}
                       </span>
                     </td>
-                    <td>
+                    <td data-label="Amount">
                       <strong>
                         {transaction.currency}{" "}
                         {transaction.amount.toLocaleString("en-US")}
                       </strong>
                     </td>
-                    <td>
+                    <td data-label="Location / channel">
                       <strong>{transaction.country}</strong>
                       <span>{transaction.channel}</span>
                     </td>
-                    <td>
+                    <td data-label="Signal">
                       {flaggedIds.has(transaction.id) ? (
                         <span className="risk-badge risk-badge--high">
                           linked evidence
@@ -779,7 +780,7 @@ function TransactionsView({
                         <span className="status-muted">baseline</span>
                       )}
                     </td>
-                    <td>
+                    <td data-label="Action">
                       <button
                         className="button button--quiet"
                         type="button"
@@ -1157,24 +1158,6 @@ function PolicyField({
         />
         {suffix ? <em>{suffix}</em> : null}
       </label>
-    </div>
-  );
-}
-
-function Empty({
-  icon: Icon,
-  title,
-  detail,
-}: {
-  icon: typeof Activity;
-  title: string;
-  detail: string;
-}) {
-  return (
-    <div className="empty-state">
-      <Icon size={28} />
-      <strong>{title}</strong>
-      <span>{detail}</span>
     </div>
   );
 }

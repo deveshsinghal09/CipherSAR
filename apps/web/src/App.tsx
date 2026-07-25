@@ -56,6 +56,12 @@ import {
   type WorkspaceView,
   WorkspaceViews,
 } from "./workspace-views";
+import {
+  Button,
+  Card,
+  EmptyState,
+  Skeleton,
+} from "./components/ui";
 
 const DEFAULT_QUERY = "Find structuring patterns in the last 30 days";
 const EXAMPLES = [
@@ -487,13 +493,12 @@ export function App() {
               hidden
               onChange={(event) => void onImport(event)}
             />
-            <button
-              className="button button--quiet"
-              type="button"
+            <Button
               onClick={() => fileInputRef.current?.click()}
+              leadingIcon={<UploadCloud size={16} />}
             >
-              <UploadCloud size={16} /> Import data
-            </button>
+              Import data
+            </Button>
           </div>
         </header>
 
@@ -520,7 +525,7 @@ export function App() {
             </div>
           </section>
 
-          <section className="command-card" aria-labelledby="command-heading">
+          <Card className="command-card" aria-labelledby="command-heading">
             <div className="command-card__top">
               <div className="agent-orb" aria-hidden="true">
                 <Network size={22} />
@@ -540,14 +545,15 @@ export function App() {
                 placeholder="e.g. Find structuring patterns in the last 30 days"
                 aria-label="Investigation query"
               />
-              <button className="button button--primary" disabled={loading}>
-                {loading ? (
-                  <LoaderCircle className="spin" size={17} />
-                ) : (
-                  <Fingerprint size={17} />
-                )}
+              <Button
+                type="submit"
+                variant="primary"
+                size="lg"
+                loading={loading}
+                leadingIcon={<Fingerprint size={17} />}
+              >
                 {loading ? "Investigating" : "Investigate"}
-              </button>
+              </Button>
             </form>
             <div className="query-examples">
               <span>Try asking</span>
@@ -564,7 +570,7 @@ export function App() {
                 </button>
               ))}
             </div>
-          </section>
+          </Card>
 
           {result ? (
             <ModelPulse model={result.model} onOpen={() => navigate("model")} />
@@ -577,16 +583,15 @@ export function App() {
                 <strong>Investigation interrupted</strong>
                 <span>{error}</span>
               </div>
-              <button
-                type="button"
-                className="button button--quiet"
+              <Button
                 onClick={() => {
                   if (!dataset) void loadDataset();
                   void investigate(query);
                 }}
+                leadingIcon={<RefreshCw size={15} />}
               >
                 Retry
-              </button>
+              </Button>
             </section>
           ) : null}
 
@@ -896,14 +901,13 @@ function FindingsTable({
           <span className="section-kicker">Prioritised results</span>
           <h2>Suspicious entities</h2>
         </div>
-        <button
-          className="button button--quiet"
-          type="button"
+        <Button
           disabled={!findings.length}
           onClick={() => exportFindings(findings)}
+          leadingIcon={<UploadCloud size={15} />}
         >
           Export evidence
-        </button>
+        </Button>
       </header>
       {findings.length ? (
         <div className="table-scroll">
@@ -958,11 +962,11 @@ function FindingsTable({
           </table>
         </div>
       ) : (
-        <div className="empty-state">
-          <ShieldCheck size={28} />
-          <strong>No entities crossed the current evidence threshold</strong>
-          <span>Try broadening the date range or asking for a different pattern.</span>
-        </div>
+        <EmptyState
+          icon={ShieldCheck}
+          title="No entities crossed the current evidence threshold"
+          detail="Try broadening the date range or asking for a different pattern."
+        />
       )}
     </section>
   );
@@ -977,10 +981,12 @@ function EvidencePanel({
 }) {
   if (!finding) {
     return (
-      <aside className="panel evidence-panel empty-state">
-        <FileSearch size={28} />
-        <strong>Select a finding</strong>
-        <span>Evidence and score contributions will appear here.</span>
+      <aside className="panel evidence-panel">
+        <EmptyState
+          icon={FileSearch}
+          title="Select a finding"
+          detail="Evidence and score contributions will appear here."
+        />
       </aside>
     );
   }
@@ -1032,20 +1038,19 @@ function EvidencePanel({
         <span>Window <strong>{dateSpan(finding)}</strong></span>
       </div>
       <div className="evidence-actions">
-        <button
-          className="button button--quiet"
-          type="button"
+        <Button
           onClick={() => exportFindings([finding])}
+          leadingIcon={<UploadCloud size={15} />}
         >
           Export
-        </button>
-        <button
-          className="button button--primary"
-          type="button"
+        </Button>
+        <Button
+          variant="primary"
           onClick={() => onSendToReview(finding)}
+          trailingIcon={<ArrowRight size={16} />}
         >
-          Send to review <ArrowRight size={16} />
-        </button>
+          Send to review
+        </Button>
       </div>
       <p className="human-note">
         <LockKeyhole size={13} /> Recommendation is advisory. Analyst approval is required.
@@ -1078,8 +1083,9 @@ function EdaPanel({ result }: { result: InvestigationResponse }) {
 function DashboardSkeleton() {
   return (
     <div className="dashboard-skeleton" aria-label="Loading investigation">
-      <div /><div /><div /><div />
-      <section /><section />
+      <Skeleton /><Skeleton /><Skeleton /><Skeleton />
+      <Skeleton className="dashboard-skeleton__panel" />
+      <Skeleton className="dashboard-skeleton__panel" />
     </div>
   );
 }
