@@ -1127,23 +1127,37 @@ function PolicyField({
   onChange: (value: number) => void;
 }) {
   return (
-    <label className="policy-field">
+    <div className="policy-field">
       <div>
         <strong>{label}</strong>
         <span>{detail}</span>
       </div>
       <input
         type="range"
+        aria-label={label}
         min={min}
         max={max}
         value={value}
         onChange={(event) => onChange(Number(event.target.value))}
       />
-      <output>
-        {value}
-        {suffix}
-      </output>
-    </label>
+      <label className="policy-value">
+        <span className="sr-only">{label} value</span>
+        <input
+          type="number"
+          aria-label={`${label} value`}
+          min={min}
+          max={max}
+          value={value}
+          onChange={(event) => {
+            const next = Number(event.target.value);
+            if (Number.isFinite(next)) {
+              onChange(Math.min(max, Math.max(min, next)));
+            }
+          }}
+        />
+        {suffix ? <em>{suffix}</em> : null}
+      </label>
+    </div>
   );
 }
 

@@ -130,6 +130,11 @@ describe("workspace sidebar views", () => {
         />,
       );
       expect(markup).toContain(heading);
+      if (activeView === "policy") {
+        expect(markup).toContain('type="number"');
+        expect(markup).toContain('aria-label="Medium-risk threshold value"');
+        expect(markup).toContain('aria-label="Minimum report confidence value"');
+      }
     },
   );
 

@@ -387,7 +387,11 @@ td span { margin-top: 3px; color: var(--text-3); font-size: 8px; }
 .policy-field strong { font-size: 10px; }
 .policy-field span { color: var(--text-3); font-size: 8px; line-height: 1.4; }
 .policy-field input { width: 100%; accent-color: var(--brand); }
-.policy-field output { padding: 7px; border: 1px solid var(--border); border-radius: 8px; color: var(--brand); background: rgba(255,255,255,.025); font: 600 10px "IBM Plex Mono"; text-align: center; }
+.policy-value { display:grid; grid-template-columns:1fr auto; align-items:center; overflow:hidden; border:1px solid var(--border); border-radius:8px; background:rgba(255,255,255,.025); }
+.policy-value input { width:100%; min-width:0; padding:7px 4px 7px 7px; border:0; outline:0; color:var(--brand); background:transparent; font:600 10px "IBM Plex Mono"; text-align:center; appearance:textfield; }
+.policy-value input::-webkit-inner-spin-button, .policy-value input::-webkit-outer-spin-button { margin:0; appearance:none; }
+.policy-value em { padding-right:7px; color:var(--brand); font:600 9px "IBM Plex Mono"; font-style:normal; }
+.sr-only { position:absolute !important; width:1px !important; height:1px !important; padding:0 !important; margin:-1px !important; overflow:hidden !important; clip:rect(0,0,0,0) !important; white-space:nowrap !important; border:0 !important; }
 .policy-summary { grid-column: 1 / -1; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 14px; padding: 18px; color: var(--info); }
 .policy-summary h2 { margin: 6px 0 4px; color: var(--text); font-size: 14px; }
 .policy-summary p { margin: 0; color: var(--text-2); font-size: 9px; line-height: 1.5; }
