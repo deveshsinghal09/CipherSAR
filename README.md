@@ -6,6 +6,15 @@ CipherSAR turns a compliance analyst's natural-language question into a query-sp
 
 The interface is presented as a bank-neutral internal Financial Crime Compliance workspace. CipherSAR is decision-support software: every escalation requires human review.
 
+## Live deployment
+
+- **Frontend:** https://ciphersar.vercel.app
+- **Backend health:** https://ciphersar-api.onrender.com/api/health
+- **Backend platform:** Render free web service in Singapore
+- **Frontend platform:** Vercel production deployment
+
+The frontend receives `VITE_API_BASE_URL` at build time and communicates with the Render API over HTTPS. The free Render service can take up to approximately 50 seconds to wake after a period of inactivity.
+
 ## Operational workspace
 
 The sidebar modules are fully functional:

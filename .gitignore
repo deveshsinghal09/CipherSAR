@@ -13,3 +13,4 @@ data/raw/
 data/processed/
 __pycache__/
 *.py[cod]
+.vercel
