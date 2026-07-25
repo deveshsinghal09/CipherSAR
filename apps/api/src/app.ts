@@ -3,6 +3,7 @@ import express, { type ErrorRequestHandler } from "express";
 import { z } from "zod";
 import { InvestigationAgent } from "./agent/engine";
 import { createSampleDataset } from "./data/sample-data";
+import { getModelMetadata } from "./ml/model";
 
 const transactionSchema = z.object({
   id: z.string().min(1),
@@ -82,6 +83,10 @@ export function createApp(): express.Express {
         "Analyse this dataset for suspicious activity",
       ],
     });
+  });
+
+  app.get("/api/model", (_request, response) => {
+    response.json(getModelMetadata());
   });
 
   app.get("/api/dataset/summary", (_request, response) => {

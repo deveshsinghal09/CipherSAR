@@ -7,6 +7,7 @@ import type {
 } from "@ciphersar/shared";
 import { DEFAULT_AML_POLICY } from "@ciphersar/shared";
 import type { CustomerFeatures } from "./features";
+import { scoreCustomerWithModel } from "../ml/model";
 import { clamp, round } from "./statistics";
 
 export interface DetectorCandidate {
@@ -32,8 +33,8 @@ export function detectRequestedPattern(
 export function detectHybridAnomalies(
   features: CustomerFeatures[],
 ): DetectorCandidate[] {
-  const candidates = features.flatMap((feature) =>
-    (
+  const candidates = features.flatMap((feature) => {
+    const ruleCandidates = (
       [
         "structuring",
         "smurfing",
@@ -45,8 +46,10 @@ export function detectHybridAnomalies(
     ).flatMap((pattern) => {
       const candidate = detectOne(feature, pattern);
       return candidate ? [candidate] : [];
-    }),
-  );
+    });
+    const modelCandidate = detectTrainedModelAnomaly(feature);
+    return modelCandidate ? [...ruleCandidates, modelCandidate] : ruleCandidates;
+  });
 
   const strongest = new Map<string, DetectorCandidate>();
   for (const candidate of candidates) {
@@ -59,6 +62,27 @@ export function detectHybridAnomalies(
     }
   }
   return [...strongest.values()];
+}
+
+function detectTrainedModelAnomaly(
+  feature: CustomerFeatures,
+): DetectorCandidate | undefined {
+  const model = scoreCustomerWithModel(feature);
+  if (!model.applicable || !model.flagged) return undefined;
+  const probabilityPercent = round(model.probability * 100, 1);
+  return {
+    customerId: feature.customerId,
+    pattern: "general_anomaly",
+    confidence: model.probability,
+    aggregateAmount: feature.totalAmount,
+    transactions: feature.transactions,
+    evidence: [
+      `${probabilityPercent}% probability from the trained AMLSim account model`,
+      `${feature.transactionCount} transactions across ${feature.counterpartyCount} counterparties`,
+      `model threshold ${round(model.threshold * 100, 1)}%`,
+    ],
+    contributions: model.contributions,
+  };
 }
 
 function detectOne(

@@ -179,6 +179,29 @@ export interface InvestigationResponse {
     limitations: string[];
   };
   policy: AmlPolicy;
+  model: ModelMetadata;
+}
+
+export interface ModelMetricSummary {
+  precision: number;
+  recall: number;
+  f1: number;
+  prAuc: number;
+  rocAuc: number;
+}
+
+export interface ModelMetadata {
+  id: string;
+  type: string;
+  status: "active";
+  trainedAt: string;
+  dataset: string;
+  datasetAccounts: number;
+  datasetTransactions: number;
+  decisionThreshold: number;
+  metrics: ModelMetricSummary;
+  topFeatures: Array<{ feature: string; importance: number }>;
+  role: "decision_support";
 }
 
 export interface AnalyzeRequest {

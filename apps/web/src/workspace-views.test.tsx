@@ -72,6 +72,25 @@ const investigation: InvestigationResponse = {
     limitations: [],
   },
   policy: DEFAULT_AML_POLICY,
+  model: {
+    id: "test-model",
+    type: "balanced random forest",
+    status: "active",
+    trainedAt: "2026-07-25T00:00:00.000Z",
+    dataset: "IBM AMLSim Example Dataset",
+    datasetAccounts: 10_000,
+    datasetTransactions: 1_323_234,
+    decisionThreshold: 0.815,
+    metrics: {
+      precision: 0.9942,
+      recall: 0.6786,
+      f1: 0.8066,
+      prAuc: 0.8922,
+      rocAuc: 0.9505,
+    },
+    topFeatures: [{ feature: "received_count", importance: 0.25 }],
+    role: "decision_support",
+  },
 };
 
 describe("workspace sidebar views", () => {
@@ -81,6 +100,7 @@ describe("workspace sidebar views", () => {
     ["customers", "Customers"],
     ["transactions", "Transactions"],
     ["datasets", "Datasets"],
+    ["model", "Model intelligence"],
     ["audit", "Audit trail"],
     ["policy", "Policy settings"],
   ] satisfies Array<[Exclude<WorkspaceView, "command">, string]>)(

@@ -30,6 +30,14 @@ describe("CipherSAR API", () => {
     expect(response.body.transactions.length).toBeGreaterThan(100);
   });
 
+  it("exposes the active trained model card", async () => {
+    const response = await request(app).get("/api/model");
+    expect(response.status).toBe(200);
+    expect(response.body.type).toBe("balanced random forest");
+    expect(response.body.dataset).toContain("AMLSim");
+    expect(response.body.metrics.prAuc).toBeGreaterThan(0.85);
+  });
+
   it("applies validated policy thresholds to recommendations", async () => {
     const response = await request(app)
       .post("/api/investigations")

@@ -9,6 +9,7 @@ import { createSampleDataset } from "../data/sample-data";
 import { buildExecutionPlan } from "./planner";
 import { parseQuery } from "./query-parser";
 import { toolRegistry, type AgentContext } from "./tools";
+import { getModelMetadata } from "../ml/model";
 
 export class InvestigationAgent {
   async analyze(
@@ -73,6 +74,7 @@ export class InvestigationAgent {
         ],
       },
       policy: context.policy,
+      model: getModelMetadata(),
     };
   }
 
