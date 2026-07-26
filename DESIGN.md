@@ -1,192 +1,200 @@
 ---
 name: CipherSAR
-description: A regulatory intelligence workspace for explainable AML investigations.
+description: A signal-room interface for explainable AML investigations.
 colors:
-  regulatory-ink: "#0B1F33"
-  evidence-green: "#08775B"
-  signal-blue: "#176B87"
-  ledger-paper: "#FFFFFF"
-  canvas-mist: "#F2F5F7"
-  rule-line: "#D8E0E7"
-  secondary-ink: "#445467"
-  alert-red: "#BC3545"
-  review-amber: "#98620B"
+  graphite: "#15141C"
+  cobalt: "#5362E8"
+  cobalt-wash: "#EEF0FF"
+  chalk: "#F7F8FA"
+  paper: "#FFFFFF"
+  rule: "#DDE1E8"
+  slate: "#596170"
+  mint: "#11A77B"
+  signal-red: "#E94A5A"
+  review-amber: "#B36A08"
 typography:
   display:
-    fontFamily: "Archivo, Arial, sans-serif"
-    fontSize: "clamp(2rem, 4vw, 4rem)"
+    fontFamily: "Anybody, Arial, sans-serif"
+    fontSize: "clamp(2.75rem, 6vw, 5.75rem)"
     fontWeight: 650
-    lineHeight: 1.02
-    letterSpacing: "-0.05em"
+    lineHeight: 0.92
+    letterSpacing: "-0.035em"
   body:
-    fontFamily: "Manrope, Arial, sans-serif"
+    fontFamily: "Schibsted Grotesk, Arial, sans-serif"
     fontSize: "14px"
     fontWeight: 450
-    lineHeight: 1.6
+    lineHeight: 1.55
   label:
-    fontFamily: "JetBrains Mono, Consolas, monospace"
+    fontFamily: "Azeret Mono, Consolas, monospace"
     fontSize: "10px"
     fontWeight: 600
     lineHeight: 1.4
-    letterSpacing: "0.06em"
+    letterSpacing: "0.04em"
 rounded:
-  control: "6px"
-  surface: "10px"
-  feature: "16px"
+  control: "4px"
+  surface: "8px"
+  feature: "12px"
 spacing:
   xs: "4px"
   sm: "8px"
   md: "16px"
   lg: "24px"
-  xl: "32px"
+  xl: "40px"
 components:
   button-primary:
-    backgroundColor: "{colors.regulatory-ink}"
-    textColor: "{colors.ledger-paper}"
+    backgroundColor: "{colors.cobalt}"
+    textColor: "{colors.paper}"
     rounded: "{rounded.control}"
-    padding: "12px 18px"
-  card:
-    backgroundColor: "{colors.ledger-paper}"
-    textColor: "{colors.regulatory-ink}"
+    padding: "13px 18px"
+  evidence-sheet:
+    backgroundColor: "{colors.paper}"
+    textColor: "{colors.graphite}"
     rounded: "{rounded.surface}"
-    padding: "20px"
+    padding: "24px"
   input:
-    backgroundColor: "{colors.ledger-paper}"
-    textColor: "{colors.regulatory-ink}"
+    backgroundColor: "{colors.paper}"
+    textColor: "{colors.graphite}"
     rounded: "{rounded.control}"
-    padding: "12px 14px"
+    padding: "14px 16px"
 ---
 
 # Design System: CipherSAR
 
 ## Overview
 
-**Creative North Star: "The Regulatory Atlas"**
+**Creative North Star: "The Signal Strip Room"**
 
-CipherSAR should feel like a precise intelligence desk assembled from modern transaction ledgers, investigation dossiers, and risk-committee briefing material. Information is dense but ordered: rules, indices, and aligned figures create confidence while selective fields of green and blue identify actions and analytical context.
+CipherSAR feels like a purpose-built financial crime operations room: a narrow graphite instrument rail, a bright investigation stage, and cobalt evidence tapes that make the agent's decisions visible. It is serious enough for a bank but avoids the familiar pale sidebar and floating-card dashboard.
 
-The system is emphatically light and operational. It avoids both generic rounded SaaS cards and theatrical cyber-security visuals. The memorable object is the report dossier: evidence, decision path, and human review controls read as one defensible record.
+The interface is document-led rather than widget-led. Queries open an investigation; a horizontal signal tape shows what the agent understood; evidence gathers into precise white sheets; and a strong vertical case strip holds reviewer status and escalation context.
 
 **Key Characteristics:**
 
-- Ledger-like alignment and compact labels for evidence.
-- Editorial hierarchy without decorative headlines.
-- Restrained color with high-meaning accents.
-- Visible analytical scope, provenance, and human control.
-- Responsive density that becomes stacked records on small screens.
+- A graphite navigation instrument that expands for orientation and collapses into a compact rail.
+- One asymmetrical command stage as the first-view focal point.
+- Cobalt evidence tapes for scope, planning, and analytical context.
+- White evidence sheets with ruled, ledger-like information.
+- Sparse semantic color and explicit human-review controls.
 
 ## Colors
 
-The palette uses cool paper neutrals, dark regulatory ink, and sparse institutional signals.
+The palette combines chalk-white reading space with a graphite frame and one assertive cobalt analytical signal.
 
 ### Primary
 
-- **Regulatory Ink:** Owns primary actions, headings, and navigational anchors.
-- **Evidence Green:** Marks selected state, validated controls, and positive system readiness.
+- **Graphite:** Navigation, primary text, and the operational frame.
+- **Evidence Cobalt:** Primary actions, agent context, selected state, and the signature signal tape.
 
 ### Secondary
 
-- **Signal Blue:** Identifies analytical context, filters, and informational system state.
+- **Verification Mint:** Successful controls, low risk, and trustworthy system readiness.
 
 ### Tertiary
 
-- **Alert Red:** Reserved for high-risk evidence and destructive or interrupted states.
-- **Review Amber:** Reserved for medium risk and pending human judgment.
+- **Signal Red:** High-risk evidence and interrupted states.
+- **Review Amber:** Medium risk and pending analyst judgment.
 
 ### Neutral
 
-- **Ledger Paper:** Primary reading surfaces.
-- **Canvas Mist:** Application background and quiet grouping.
-- **Rule Line:** Table rules, control borders, and structural dividers.
-- **Secondary Ink:** Supporting copy and metadata.
+- **Chalk:** Application canvas and long-session working background.
+- **Paper:** Evidence sheets, tables, inputs, and report pages.
+- **Rule:** Structural dividers and ledger lines.
+- **Slate:** Supporting explanations and metadata.
 
-**The Sparse Signal Rule.** Accent color communicates state or action; it never becomes ambient decoration.
+**The Cobalt Tape Rule.** Cobalt appears as a continuous analytical field or decisive action, never as decorative scattered accents.
 
 ## Typography
 
-**Display Font:** Archivo (with Arial fallback)
+**Display Font:** Anybody (with Arial fallback)
 
-**Body Font:** Manrope (with Arial fallback)
+**Body Font:** Schibsted Grotesk (with Arial fallback)
 
-**Label/Mono Font:** JetBrains Mono (with Consolas fallback)
+**Label/Mono Font:** Azeret Mono (with Consolas fallback)
 
-**Character:** Archivo gives dossier headings a compact archival authority without slipping into newspaper styling. Manrope keeps long operational copy contemporary and calm. JetBrains Mono turns evidence, identifiers, scores, and tool steps into inspectable operational data.
+**Character:** Anybody creates a compact, engineered display voice with variable-width character. Schibsted Grotesk stays calm and readable for evidence. Azeret Mono is reserved for values, identifiers, filters, timestamps, and decision provenance.
 
 ### Hierarchy
 
-- **Display** (650, responsive, 1.02): Used only for a page thesis or report title.
-- **Headline** (650, 24–34px, 1.12): Primary workspace and section titles.
-- **Title** (650, 14–18px, 1.3): Panel and record titles.
-- **Body** (450, 14px, 1.6): Explanations and workflow guidance; keep readable lines near 70ch.
-- **Label** (600, 10px, 0.06em): Indices, timestamps, fields, and compact status metadata.
+- **Display** (650, responsive, 0.92): The command-center thesis and major report title.
+- **Headline** (650, 26–40px, 1.02): Workspace and evidence-sheet headings.
+- **Title** (650, 14–18px, 1.25): Panel and record titles.
+- **Body** (450, 14px, 1.55): Guidance and evidence explanations, kept near 70ch.
+- **Label** (600, 10px, 0.04em): Exact operational metadata and dense status labels.
 
-**The Evidence Type Rule.** Use monospace only where a reviewer benefits from exact alignment or machine-like provenance.
+**The Measurement Rule.** Monospace is used only where precision or alignment improves review speed.
 
 ## Layout
 
-The desktop shell uses a fixed 256px navigation column, a compact 68px context bar, and a fluid evidence canvas capped at 1680px. Primary screens use asymmetric grids that give evidence tables more room than supporting controls. Spacing follows an 8px rhythm with 4px allowed only inside dense metadata.
+Desktop uses a 252px graphite navigation instrument that collapses to an 80px rail, a 64px context strip, and a fluid workstage capped at 1760px. The command surface is asymmetrical: thesis and query occupy the broad field while agent readiness occupies a compact fact column. Results favor wide evidence tables with a narrower decision strip.
 
-At tablet width the navigation becomes an overlay and two-column analytical regions collapse deliberately. On mobile, tables become readable records, primary actions remain visible, and secondary metadata is reordered below the decision.
+At tablet size the rail becomes an overlay and analytical columns stack. On mobile, the command form becomes vertical, evidence tables become horizontally scrollable records, and navigation remains fully labeled inside the overlay. Spacing follows an 8px rhythm, with 4px reserved for data-dense metadata.
 
 ## Elevation & Depth
 
-Depth is structural, not decorative. Most surfaces are separated by tonal fields and rule lines. Low ambient shadows are reserved for the command surface, open overlays, and the report paper floating above its workbench.
+Depth comes from physical workflow hierarchy. The command stage and evidence sheets receive directional shadows; ordinary controls and nested information rely on tonal changes or rules. Graphite navigation stays visually flush.
 
-**The Paper Stack Rule.** A shadow must imply a real layer in the analyst workflow; ordinary panels remain flat.
+**The Evidence Stack Rule.** Only an actionable work surface may float; content inside it is divided, not placed inside another card.
 
 ## Shapes
 
-Controls use precise 6px corners, panels use 10px corners, and only focal workspaces may use 16px. Pills are limited to compact statuses whose shape helps them scan as tokens. Risk charts and scores may use circles when the geometry encodes a quantity.
+Controls use engineered 4px corners, evidence sheets use 8px, and focal stages use at most 12px. Pills are limited to small statuses. Surfaces are mostly rectangular so tables, reports, and case records align into a consistent operational geometry.
 
 ## Components
 
 ### Buttons
 
-- **Shape:** Compact rectangular controls with precise corners.
-- **Primary:** Regulatory ink with white text; reserved for one clear action per region.
-- **Hover / Focus:** Small tonal shift and a high-contrast two-stage focus ring; no bouncing.
-- **Secondary / Ghost:** Paper or transparent surfaces with visible structural borders.
+- **Shape:** Compact rectangular control with 4px corners.
+- **Primary:** Cobalt with white text and one clear action per region.
+- **Hover / Focus:** Darker cobalt on hover and a graphite-plus-cobalt focus treatment.
+- **Secondary / Ghost:** Paper or transparent backgrounds with structural rules.
 
 ### Chips
 
-- **Style:** Compact state tokens with text plus color, never color alone.
-- **State:** Selected chips gain a leading mark or stronger border.
+- **Style:** Compact, squared status tokens using label plus semantic color.
+- **State:** Selected filters gain a filled tint and stronger foreground; status always includes text.
 
 ### Cards / Containers
 
-- **Corner Style:** Restrained 10px surfaces.
-- **Background:** Ledger paper on canvas mist.
-- **Shadow Strategy:** Flat by default; focal layers only.
-- **Border:** Cool rule lines define most structure.
-- **Internal Padding:** 16–24px depending on density.
+- **Corner Style:** Evidence-sheet corners at 8px.
+- **Background:** Paper on chalk; graphite is reserved for navigation.
+- **Shadow Strategy:** Directional shadow for focal working layers only.
+- **Border:** Rules divide evidence instead of nested containers.
+- **Internal Padding:** 16–32px based on information density.
 
 ### Inputs / Fields
 
-- **Style:** White field, strong ink text, 1px rule, and 6px corners.
-- **Focus:** Evidence-green border plus a visible outer focus ring.
-- **Error / Disabled:** Error includes text and icon; disabled state remains readable.
+- **Style:** White field, graphite text, visible rule, and 4px corners.
+- **Focus:** Cobalt border with an offset focus ring.
+- **Error / Disabled:** Error gives a recovery instruction; disabled controls stay legible.
 
 ### Navigation
 
-Navigation is a quiet index, not a stack of floating buttons. The active item uses a left rule, stronger ink, and a lightly tinted field. Mobile navigation preserves the same order and labels.
+The desktop navigation is fully labeled by default and collapses to an icon-led rail with accessible hover/focus labels. The active destination becomes a cobalt tile. The mobile overlay restores full text labels, traps focus while open, closes with Escape, and preserves the same information order.
 
-### Report Dossier
+### Signal Tape
 
-The report workspace pairs a narrow preparation rail with a paper-like preview. The final document exposes source, model, timestamp, investigation identifier, human-review disclaimer, and export action within the same evidence frame.
+A full-width cobalt band exposes prepared scope, selected analytical behavior, and human-control status. It clips into view once after query state changes and collapses to stacked rows on narrow screens.
+
+### Case Strip
+
+Report and evidence workspaces use a narrow vertical cobalt band to keep case status, source, and review gates visually attached to the document.
 
 ## Do's and Don'ts
 
 ### Do:
 
+- **Do** make agent intent, selected tools, skipped work, and scope visible.
 - **Do** align scores, identifiers, amounts, and timestamps for rapid comparison.
-- **Do** expose tool selection, skipped work, provenance, and limitations near conclusions.
-- **Do** use empty, loading, error, and AI-fallback states that explain the next safe action.
-- **Do** keep the application primarily light and readable during long review sessions.
+- **Do** use one strong cobalt field to orient each complex workflow.
+- **Do** make empty, loading, error, and AI-fallback states explain the next safe action.
+- **Do** preserve human review as a visible gate before escalation.
+- **Do** keep workspace search, navigation collapse, and analyst controls keyboard accessible.
 
 ### Don't:
 
-- **Don't** recreate the generic dashboard pattern of evenly sized floating statistic cards.
-- **Don't** use neon glows, glassmorphism, or cyber-security theatrics.
-- **Don't** hide consequential actions behind icon-only controls.
-- **Don't** imply that an AI-generated draft is a filed SAR or replaces human review.
+- **Don't** return to a wide pale sidebar with stacked rounded navigation buttons.
+- **Don't** build screens from evenly sized statistic cards.
+- **Don't** use gradients, glassmorphism, neon, or cyber-security theatrics.
+- **Don't** hide consequential actions behind unexplained icon-only controls.
+- **Don't** imply that an AI draft is a filed SAR or replaces human review.
 - **Don't** expose API keys or customer evidence in client-side configuration.

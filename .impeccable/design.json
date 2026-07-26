@@ -1,71 +1,76 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-07-26T08:30:00.000Z",
+  "generatedAt": "2026-07-26T10:30:00.000Z",
   "title": "Design System: CipherSAR",
   "extensions": {
     "colorMeta": {
-      "regulatory-ink": {
+      "graphite": {
         "role": "primary",
-        "displayName": "Regulatory Ink",
-        "canonical": "#0B1F33",
-        "tonalRamp": ["#06111D", "#0B1F33", "#15334D", "#31516B", "#627A8F", "#AAB8C4", "#D8E0E7", "#F2F5F7"]
+        "displayName": "Graphite",
+        "canonical": "#15141C",
+        "tonalRamp": ["#0B0A10", "#15141C", "#282631", "#45424F", "#6E6978", "#A6A2AD", "#D4D1D8", "#F1F0F3"]
       },
-      "evidence-green": {
+      "cobalt": {
         "role": "primary",
-        "displayName": "Evidence Green",
-        "canonical": "#08775B",
-        "tonalRamp": ["#043D30", "#075F4A", "#08775B", "#269276", "#65B09B", "#A5D1C4", "#D5E9E3", "#EEF7F4"]
+        "displayName": "Evidence Cobalt",
+        "canonical": "#5362E8",
+        "tonalRamp": ["#151A58", "#252E91", "#3B48C2", "#5362E8", "#7D88F0", "#A7AEF6", "#D4D8FB", "#EEF0FF"]
       },
-      "signal-blue": {
-        "role": "secondary",
-        "displayName": "Signal Blue",
-        "canonical": "#176B87",
-        "tonalRamp": ["#0A3444", "#12566D", "#176B87", "#3C87A0", "#79ADBE", "#AFCDD7", "#DCE9ED", "#F0F6F8"]
-      },
-      "ledger-paper": {
+      "chalk": {
         "role": "neutral",
-        "displayName": "Ledger Paper",
-        "canonical": "#FFFFFF",
-        "tonalRamp": ["#0B1F33", "#445467", "#657487", "#98A7B4", "#C2CCD4", "#D8E0E7", "#F2F5F7", "#FFFFFF"]
+        "displayName": "Chalk",
+        "canonical": "#F7F8FA",
+        "tonalRamp": ["#15141C", "#34323C", "#596170", "#8D929D", "#BCC0C8", "#DDE1E8", "#EEF0F3", "#F7F8FA"]
+      },
+      "mint": {
+        "role": "secondary",
+        "displayName": "Verification Mint",
+        "canonical": "#11A77B",
+        "tonalRamp": ["#063B2D", "#075F47", "#0A805F", "#11A77B", "#45C29D", "#83D8BF", "#C6EEE2", "#EFFAF6"]
       }
     },
     "typographyMeta": {
       "display": {
-        "displayName": "Dossier Display",
-        "purpose": "Archivo headings give investigation and report titles compact archival authority."
+        "displayName": "Variable Command Display",
+        "purpose": "Anybody gives the command stage an engineered but humane identity."
       },
       "body": {
-        "displayName": "Operational Body",
-        "purpose": "Manrope supports long evidence explanations and interface guidance."
+        "displayName": "Evidence Body",
+        "purpose": "Schibsted Grotesk carries explanations and operational interface copy."
       },
       "label": {
-        "displayName": "Evidence Label",
-        "purpose": "JetBrains Mono aligns identifiers, measurements, scores, and provenance."
+        "displayName": "Measurement Label",
+        "purpose": "Azeret Mono aligns exact values, identifiers, and provenance."
       }
     },
     "shadows": [
       {
-        "name": "focal-workspace",
-        "value": "0 22px 54px rgba(11,31,51,.12)",
-        "purpose": "The command surface and report paper when they sit above an operational workbench."
+        "name": "evidence-sheet",
+        "value": "0 18px 42px rgba(21,20,28,.10)",
+        "purpose": "Actionable evidence sheets and report documents."
       },
       {
-        "name": "ambient-control",
-        "value": "0 8px 24px rgba(11,31,51,.055)",
-        "purpose": "Temporary overlays and elevated controls only."
+        "name": "command-stage",
+        "value": "0 24px 60px rgba(35,38,72,.12)",
+        "purpose": "The first-view investigation stage."
       }
     ],
     "motion": [
       {
+        "name": "signal-reveal",
+        "value": "560ms cubic-bezier(.16,1,.3,1)",
+        "purpose": "One authored clip-path reveal for the cobalt evidence tape."
+      },
+      {
         "name": "state-change",
-        "value": "150ms ease",
-        "purpose": "Quiet hover, focus, and selected-state feedback."
+        "value": "160ms ease",
+        "purpose": "Hover, focus, and selected-state feedback."
       }
     ],
     "breakpoints": [
       { "name": "mobile", "value": "720px" },
-      { "name": "navigation-overlay", "value": "960px" },
-      { "name": "compact-desktop", "value": "1180px" }
+      { "name": "navigation-overlay", "value": "980px" },
+      { "name": "compact-desktop", "value": "1240px" }
     ]
   },
   "components": [
@@ -73,78 +78,89 @@
       "name": "Primary Button",
       "kind": "button",
       "refersTo": "button-primary",
-      "description": "One decisive action per region, rendered in regulatory ink.",
-      "html": "<button class=\"ds-button-primary\">Generate report</button>",
-      "css": ".ds-button-primary{min-height:40px;padding:0 15px;border:0;border-radius:6px;background:#0B1F33;color:#fff;font:700 11px Manrope,Arial,sans-serif;cursor:pointer;transition:background 150ms ease,transform 150ms ease}.ds-button-primary:hover{background:#15334D;transform:translateY(-1px)}.ds-button-primary:focus-visible{outline:3px solid rgba(8,119,91,.28);outline-offset:2px}"
+      "description": "A decisive cobalt action with compact engineered corners.",
+      "html": "<button class=\"ds-button-primary\">Investigate</button>",
+      "css": ".ds-button-primary{min-height:44px;padding:0 18px;border:0;border-radius:4px;background:#5362E8;color:#fff;font:650 12px 'Schibsted Grotesk',Arial,sans-serif;cursor:pointer;transition:background 160ms ease,transform 160ms ease,box-shadow 160ms ease}.ds-button-primary:hover{background:#414EC7;transform:translateY(-1px);box-shadow:0 8px 18px rgba(83,98,232,.22)}.ds-button-primary:focus-visible{outline:2px solid #15141C;outline-offset:3px}"
     },
     {
-      "name": "Evidence Field",
+      "name": "Investigation Field",
       "kind": "input",
       "refersTo": "input",
-      "description": "A white, precise field for analyst queries and selectors.",
-      "html": "<input class=\"ds-evidence-field\" value=\"Find structuring patterns in the last 30 days\" aria-label=\"Investigation query\">",
-      "css": ".ds-evidence-field{width:100%;min-height:44px;padding:0 13px;border:1px solid #B8C5CF;border-radius:6px;background:#fff;color:#0B1F33;font:500 13px Manrope,Arial,sans-serif}.ds-evidence-field:hover{border-color:#657487}.ds-evidence-field:focus{border-color:#08775B;outline:3px solid rgba(8,119,91,.13)}"
+      "description": "A broad paper field for natural-language AML instructions.",
+      "html": "<input class=\"ds-investigation-field\" value=\"Find structuring patterns in the last 30 days\" aria-label=\"Investigation query\">",
+      "css": ".ds-investigation-field{width:100%;min-height:52px;padding:0 16px;border:1px solid #B9BFCA;border-radius:4px;background:#fff;color:#15141C;font:500 14px 'Schibsted Grotesk',Arial,sans-serif}.ds-investigation-field:hover{border-color:#7B8290}.ds-investigation-field:focus{border-color:#5362E8;outline:3px solid rgba(83,98,232,.16)}"
     },
     {
-      "name": "Workspace Navigation",
+      "name": "Instrument Rail",
       "kind": "nav",
-      "description": "Quiet index navigation with a ruled active state.",
-      "html": "<nav class=\"ds-nav\"><button>Investigations</button><button class=\"is-active\">AI Report Studio</button><button>Audit trail</button></nav>",
-      "css": ".ds-nav{display:grid;gap:2px;width:220px;padding:10px;background:#F9FBFC}.ds-nav button{min-height:40px;padding:0 10px;border:0;border-radius:6px;background:transparent;color:#526174;font:650 12px Manrope,Arial,sans-serif;text-align:left}.ds-nav button:hover{background:#EDF2F4;color:#0B1F33}.ds-nav .is-active{background:#E3EEEB;color:#0B1F33;box-shadow:inset 1px 0 0 #08775B}.ds-nav button:focus-visible{outline:3px solid rgba(8,119,91,.22);outline-offset:1px}"
+      "description": "An expandable graphite navigation instrument with a cobalt active destination.",
+      "html": "<nav class=\"ds-rail\"><button class=\"is-active\"><span>C</span>Command center</button><button><span>I</span>Investigations</button><button><span>R</span>AI Report Studio</button></nav>",
+      "css": ".ds-rail{display:grid;align-content:start;gap:6px;width:240px;min-height:280px;padding:16px;background:#15141C}.ds-rail button{height:44px;display:flex;align-items:center;gap:10px;padding:0 10px;border:0;border-radius:4px;background:transparent;color:#A6A2AD;font:600 11px 'Schibsted Grotesk',Arial,sans-serif;text-align:left}.ds-rail button span{width:24px;color:inherit;font:600 10px 'Azeret Mono',Consolas,monospace}.ds-rail button:hover{background:#282631;color:#fff}.ds-rail .is-active{background:#5362E8;color:#fff}.ds-rail button:focus-visible{outline:2px solid #fff;outline-offset:2px}"
     },
     {
       "name": "Risk Status",
       "kind": "chip",
-      "description": "Compact semantic status with text and color.",
+      "description": "A squared semantic tag that always includes a readable label.",
       "html": "<span class=\"ds-risk-status\">High risk · 92</span>",
-      "css": ".ds-risk-status{display:inline-flex;align-items:center;padding:5px 7px;border-radius:4px;background:#FBEAEC;color:#BC3545;font:600 9px 'JetBrains Mono',Consolas,monospace}.ds-risk-status:focus-visible{outline:3px solid rgba(188,53,69,.2);outline-offset:2px}"
+      "css": ".ds-risk-status{display:inline-flex;align-items:center;padding:5px 7px;border-radius:3px;background:#FDECEF;color:#C52F42;font:600 9px 'Azeret Mono',Consolas,monospace}.ds-risk-status:focus-visible{outline:2px solid #C52F42;outline-offset:2px}"
     },
     {
-      "name": "Report Dossier",
+      "name": "Signal Tape",
       "kind": "custom",
-      "description": "The signature paper surface that keeps evidence, provenance, limitations, and export together.",
-      "html": "<article class=\"ds-report\"><header><strong>CipherSAR</strong><span>AI report dossier</span></header><h2>Executive investigation summary</h2><p>Evidence-led reviewer draft with mandatory human validation.</p></article>",
-      "css": ".ds-report{width:520px;padding:34px;background:#fff;color:#0B1F33;box-shadow:0 18px 44px rgba(11,31,51,.12);font:450 13px/1.65 Manrope,Arial,sans-serif}.ds-report header{display:flex;justify-content:space-between;padding-bottom:12px;border-bottom:2px solid #0B1F33}.ds-report header span{color:#657487;font:600 8px 'JetBrains Mono',Consolas,monospace;text-transform:uppercase}.ds-report h2{margin:34px 0 10px;font:700 30px/1.08 Archivo,Arial,sans-serif;letter-spacing:-.035em}.ds-report p{margin:0;color:#445467}"
+      "description": "The signature cobalt band for query scope, tool choice, and human-control state.",
+      "html": "<section class=\"ds-signal-tape\"><span>Intent</span><strong>Structuring · 30 days</strong><span>Control</span><strong>Human review required</strong></section>",
+      "css": ".ds-signal-tape{display:grid;grid-template-columns:auto 1fr auto 1fr;gap:10px 18px;padding:18px 22px;border-radius:4px;background:#5362E8;color:#fff;font:500 13px 'Schibsted Grotesk',Arial,sans-serif;box-shadow:0 10px 24px rgba(83,98,232,.22)}.ds-signal-tape span{color:#DDE0FF;font:600 9px 'Azeret Mono',Consolas,monospace;text-transform:uppercase}.ds-signal-tape strong{font-weight:650}"
+    },
+    {
+      "name": "Evidence Sheet",
+      "kind": "card",
+      "refersTo": "evidence-sheet",
+      "description": "A ruled white working document for plans, findings, and explanations.",
+      "html": "<article class=\"ds-evidence-sheet\"><header><span>Evidence / 04</span><strong>Selected finding</strong></header><h2>Possible structuring activity</h2><p>Amounts cluster below the configured reporting threshold.</p></article>",
+      "css": ".ds-evidence-sheet{width:520px;padding:24px;border:1px solid #DDE1E8;border-radius:8px;background:#fff;color:#15141C;box-shadow:0 18px 42px rgba(21,20,28,.10);font:450 13px/1.6 'Schibsted Grotesk',Arial,sans-serif}.ds-evidence-sheet header{display:flex;justify-content:space-between;padding-bottom:12px;border-bottom:1px solid #DDE1E8}.ds-evidence-sheet header span{color:#596170;font:600 9px 'Azeret Mono',Consolas,monospace}.ds-evidence-sheet h2{margin:28px 0 8px;font:650 28px/1 'Anybody',Arial,sans-serif;letter-spacing:-.025em}.ds-evidence-sheet p{margin:0;color:#596170}"
     }
   ],
   "narrative": {
-    "northStar": "The Regulatory Atlas",
-    "overview": "CipherSAR feels like a precise intelligence desk assembled from modern transaction ledgers, investigation dossiers, and risk-committee briefing material. Information is dense but ordered, and the memorable object is the report dossier.",
+    "northStar": "The Signal Strip Room",
+    "overview": "CipherSAR feels like a purpose-built financial crime operations room: a narrow graphite instrument rail, a bright investigation stage, and cobalt evidence tapes that make the agent's decisions visible. It is serious enough for a bank but avoids the familiar pale sidebar and floating-card dashboard. The interface is document-led rather than widget-led.",
     "keyCharacteristics": [
-      "Ledger-like alignment and compact labels for evidence.",
-      "Editorial hierarchy without decorative headlines.",
-      "Restrained color with high-meaning accents.",
-      "Visible analytical scope, provenance, and human control.",
-      "Responsive density that becomes stacked records on small screens."
+      "A graphite navigation instrument that expands for orientation and collapses into a compact rail.",
+      "One asymmetrical command stage as the first-view focal point.",
+      "Cobalt evidence tapes for scope, planning, and analytical context.",
+      "White evidence sheets with ruled, ledger-like information.",
+      "Sparse semantic color and explicit human-review controls."
     ],
     "rules": [
       {
-        "name": "The Sparse Signal Rule",
-        "body": "Accent color communicates state or action; it never becomes ambient decoration.",
+        "name": "The Cobalt Tape Rule",
+        "body": "Cobalt appears as a continuous analytical field or decisive action, never as decorative scattered accents.",
         "section": "colors"
       },
       {
-        "name": "The Evidence Type Rule",
-        "body": "Use monospace only where a reviewer benefits from exact alignment or machine-like provenance.",
+        "name": "The Measurement Rule",
+        "body": "Monospace is used only where precision or alignment improves review speed.",
         "section": "typography"
       },
       {
-        "name": "The Paper Stack Rule",
-        "body": "A shadow must imply a real layer in the analyst workflow; ordinary panels remain flat.",
+        "name": "The Evidence Stack Rule",
+        "body": "Only an actionable work surface may float; content inside it is divided, not placed inside another card.",
         "section": "elevation"
       }
     ],
     "dos": [
+      "Do make agent intent, selected tools, skipped work, and scope visible.",
       "Do align scores, identifiers, amounts, and timestamps for rapid comparison.",
-      "Do expose tool selection, skipped work, provenance, and limitations near conclusions.",
-      "Do use empty, loading, error, and AI-fallback states that explain the next safe action.",
-      "Do keep the application primarily light and readable during long review sessions."
+      "Do use one strong cobalt field to orient each complex workflow.",
+      "Do make empty, loading, error, and AI-fallback states explain the next safe action.",
+      "Do preserve human review as a visible gate before escalation."
+      ,"Do keep workspace search, navigation collapse, and analyst controls keyboard accessible."
     ],
     "donts": [
-      "Don't recreate the generic dashboard pattern of evenly sized floating statistic cards.",
-      "Don't use neon glows, glassmorphism, or cyber-security theatrics.",
-      "Don't hide consequential actions behind icon-only controls.",
-      "Don't imply that an AI-generated draft is a filed SAR or replaces human review.",
+      "Don't return to a wide pale sidebar with stacked rounded navigation buttons.",
+      "Don't build screens from evenly sized statistic cards.",
+      "Don't use gradients, glassmorphism, neon, or cyber-security theatrics.",
+      "Don't hide consequential actions behind unexplained icon-only controls.",
+      "Don't imply that an AI draft is a filed SAR or replaces human review.",
       "Don't expose API keys or customer evidence in client-side configuration."
     ]
   }

@@ -2,7 +2,7 @@
 version: 1
 slug: "apps-web-src-report-studio-tsx"
 primary_target: "apps/web/src/report-studio.tsx"
-related_targets: ["apps/web/src/styles.css"]
+related_targets: ["apps/web/src/styles.css", "apps/web/src/signal-room.css"]
 ---
 
 ## Scope and mode
@@ -20,7 +20,7 @@ The surface uses only completed investigation data. Gemini is an optional server
 
 ## Chosen direction and memorable moment
 
-The Regulatory Atlas. A preparation index sits beside a paper-like evidence dossier, so the report feels like a real object in a compliance workflow rather than an AI chat response.
+The Signal Strip Room. A graphite preparation rail and narrow cobalt case strip stay physically attached to the white evidence document, making human-review status and draft provenance feel like part of the case rather than a separate AI chat response.
 
 ## Unresolved decisions
 
