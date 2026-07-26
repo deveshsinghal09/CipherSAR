@@ -250,3 +250,32 @@ export interface DatasetResponse {
   transactions: Transaction[];
   knownDemoPatterns: AmlPattern[];
 }
+
+export type ReportTemplate =
+  | "executive_summary"
+  | "case_narrative"
+  | "sar_review_brief";
+
+export interface GenerateReportRequest {
+  investigation: InvestigationResponse;
+  template: ReportTemplate;
+}
+
+export interface ReportSection {
+  heading: string;
+  content: string;
+}
+
+export interface GeneratedReport {
+  reportId: string;
+  investigationId: string;
+  generatedAt: string;
+  title: string;
+  subtitle: string;
+  executiveSummary: string;
+  sections: ReportSection[];
+  source: "gemini" | "local";
+  model: string;
+  disclaimer: string;
+  limitations: string[];
+}

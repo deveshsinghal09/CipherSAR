@@ -31,6 +31,7 @@ import {
 import { type FormEvent, useMemo, useState } from "react";
 import { EmptyState as Empty } from "./components/ui";
 import { formatInr, localizeCurrencyText } from "./formatters";
+import { ReportStudio } from "./report-studio";
 
 export type WorkspaceView =
   | "command"
@@ -39,6 +40,7 @@ export type WorkspaceView =
   | "customers"
   | "transactions"
   | "datasets"
+  | "reports"
   | "model"
   | "audit"
   | "policy";
@@ -131,6 +133,19 @@ export function WorkspaceViews(props: WorkspaceViewsProps) {
           imported={props.imported}
           onImport={props.onImport}
           onReset={props.onResetDataset}
+        />
+      );
+    case "reports":
+      return (
+        <ReportStudio
+          investigations={
+            props.result &&
+            !props.history.some(
+              (item) => item.investigationId === props.result?.investigationId,
+            )
+              ? [props.result, ...props.history]
+              : props.history
+          }
         />
       );
     case "model":

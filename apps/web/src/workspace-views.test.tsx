@@ -115,6 +115,7 @@ describe("workspace sidebar views", () => {
     ["customers", "Customers"],
     ["transactions", "Transactions"],
     ["datasets", "Datasets"],
+    ["reports", "Turn evidence into a defensible review brief."],
     ["model", "Model intelligence"],
     ["audit", "Audit trail"],
     ["policy", "Policy settings"],

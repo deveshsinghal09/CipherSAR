@@ -1,6 +1,8 @@
 import type {
   AnalyzeRequest,
   DatasetResponse,
+  GenerateReportRequest,
+  GeneratedReport,
   InvestigationResponse,
 } from "@ciphersar/shared";
 
@@ -53,6 +55,33 @@ export async function getDataset(signal?: AbortSignal): Promise<DatasetResponse>
     );
   }
   return payload as DatasetResponse;
+}
+
+export async function generateReport(
+  request: GenerateReportRequest,
+  signal?: AbortSignal,
+): Promise<GeneratedReport> {
+  const init: RequestInit = {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(request),
+  };
+  if (signal) init.signal = signal;
+
+  const response = await fetch(apiUrl("/api/reports"), init);
+  const payload = await readJson(response);
+  if (!response.ok) {
+    const message =
+      typeof payload === "object" &&
+      payload !== null &&
+      "message" in payload &&
+      typeof payload.message === "string"
+        ? payload.message
+        : "The report draft could not be generated.";
+    throw new Error(message);
+  }
+
+  return payload as GeneratedReport;
 }
 
 async function readJson(response: Response): Promise<unknown> {

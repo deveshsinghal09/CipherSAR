@@ -69,7 +69,7 @@ Every API response contains `decisionSummary`, `parsedQuery`, `plan.steps`, `pla
 | Escalation recommendation | Configurable policy maps evidence to `monitor`, `review`, or `report`; human approval always remains mandatory. |
 | Judge-inspectable structured output | `decisionSummary`, parsed filters, selected/skipped tools, scope reduction, top transactions, findings, charts, metrics, safeguards, and the full tool trace are returned or displayed. |
 
-The agent does not require Gemini or another hosted LLM to function. Deterministic orchestration keeps the judged workflow reproducible, fast, explainable, and available offline; an LLM can be added later as an optional wording layer without controlling detection or escalation.
+The investigation agent does not require Gemini or another hosted LLM to function. Deterministic orchestration keeps detection reproducible, explainable, and available offline. Gemini is used only as an optional server-side writing layer in Report Studio; without a key, CipherSAR creates a deterministic local report draft. Gemini never controls detection, scoring, or escalation.
 
 ## Detection approach
 
@@ -143,6 +143,8 @@ Raw Kaggle files are intentionally gitignored. No real customer or financial dat
 - TypeScript with strict type checking
 - React 19 + Vite
 - Node.js + Express
+- Optional Gemini Interactions API for report drafting
+- jsPDF for reviewer PDF export
 - Python 3.11, pandas, and scikit-learn for offline training
 - Zod request validation
 - Vitest + Supertest
@@ -161,6 +163,17 @@ npm run dev
 ```
 
 Open `http://localhost:5173`. The API runs on `http://localhost:4000`.
+
+### Optional Gemini report drafting
+
+Copy `.env.example` to `.env`, then add a newly generated Google AI Studio key:
+
+```dotenv
+GEMINI_API_KEY=your_new_key_here
+GEMINI_MODEL=gemini-3.6-flash
+```
+
+The key is read only by the Express API and must never be prefixed with `VITE_` or committed to Git. If the key is absent, invalid, rate-limited, or unavailable, Report Studio automatically produces a local deterministic draft and identifies the fallback in the UI.
 
 Useful commands:
 
@@ -195,6 +208,16 @@ On macOS/Linux, use `.venv/bin/python`. The command regenerates `apps/api/src/ml
 5. Use **Import data** to analyse a CSV matching the documented schema.
 6. Use **Export evidence** to download the current findings as JSON.
 
+### AI Report Studio
+
+1. Complete at least one investigation.
+2. Open **AI Report Studio** from the sidebar.
+3. Select the source investigation and choose an executive summary, case narrative, or SAR review brief.
+4. Generate the controlled draft and verify its source badge, evidence, limitations, and human-review notice.
+5. Select **Download PDF** to export the reviewer copy.
+
+Report drafts are decision support only. They are not filed SARs and do not replace a qualified compliance professional.
+
 ### API
 
 Use the built-in synthetic dataset:
@@ -215,6 +238,7 @@ Endpoints:
 - `GET /api/dataset`
 - `GET /api/model`
 - `POST /api/investigations`
+- `POST /api/reports`
 
 ## Docker
 
@@ -252,7 +276,7 @@ See [Architecture and controls](docs/ARCHITECTURE.md) for the production-hardeni
 - Model training: [IBM AMLSim Example Dataset on Kaggle](https://www.kaggle.com/datasets/anshankul/ibm-amlsim-example-dataset/data), Apache 2.0.
 - Live demo transactions and customer records: deterministic synthetic data generated locally in `apps/api/src/data/sample-data.ts`.
 - AML pattern definitions: implemented from the challenge brief's structuring, smurfing, and layering examples and commonly understood transaction-monitoring concepts.
-- No personal information, proprietary model, or third-party inference API is used at runtime.
+- No personal information is bundled with the repository. Gemini is optional and receives only the selected investigation summary and top findings when explicitly invoked from Report Studio.
 
 ## Contribution traceability
 

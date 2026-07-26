@@ -32,6 +32,7 @@ import {
   Network,
   RefreshCw,
   Route,
+  ScrollText,
   Search,
   Settings,
   ShieldCheck,
@@ -82,6 +83,7 @@ const NAV_ITEMS = [
   { id: "customers", label: "Customers", icon: Users },
   { id: "transactions", label: "Transactions", icon: Activity },
   { id: "datasets", label: "Datasets", icon: Database },
+  { id: "reports", label: "AI Report Studio", icon: ScrollText },
 ] satisfies Array<{
   id: WorkspaceView;
   label: string;
@@ -212,7 +214,7 @@ export function App() {
           return next;
         });
         appendAudit({
-          actor: "Ankit Marik",
+          actor: "Compliance analyst",
           action: "Investigation completed",
           detail: `${response.investigationId}: “${nextQuery}” produced ${response.findings.length} explainable findings using ${response.plan.steps.length} tools.`,
           category: "investigation",
@@ -276,7 +278,7 @@ export function App() {
       setDatasetLoading(false);
       setDatasetName(file.name);
       appendAudit({
-        actor: "Ankit Marik",
+        actor: "Compliance analyst",
         action: "Dataset imported",
         detail: `${file.name} activated with ${transactions.length} transactions across ${customers.length} customers.`,
         category: "dataset",
@@ -298,6 +300,7 @@ export function App() {
   const navigate = (view: WorkspaceView) => {
     setActiveView(view);
     setMobileNavOpen(false);
+    window.scrollTo({ top: 0 });
   };
 
   const prepareInvestigation = (nextQuery: string) => {
@@ -325,7 +328,7 @@ export function App() {
       [findingReviewKey(finding)]: status,
     }));
     appendAudit({
-      actor: "Ankit Marik",
+      actor: "Compliance analyst",
       action: `Review ${status.replaceAll("_", " ")}`,
       detail: `${finding.customerId} (${finding.pattern.replaceAll("_", " ")}) changed to ${status.replaceAll("_", " ")}.`,
       category: "review",
@@ -339,7 +342,7 @@ export function App() {
       setImportedTransactions([]);
       setImportedCustomers([]);
       appendAudit({
-        actor: "Ankit Marik",
+        actor: "Compliance analyst",
         action: "Synthetic dataset restored",
         detail: `${sample.transactions.length} transactions and ${sample.customers.length} customers are active.`,
         category: "dataset",
@@ -357,7 +360,7 @@ export function App() {
   const applyPolicy = (nextPolicy: AmlPolicy) => {
     setPolicy(nextPolicy);
     appendAudit({
-      actor: "Ankit Marik",
+      actor: "Compliance analyst",
       action: "AML policy updated",
       detail: `Risk bands set to ${nextPolicy.mediumRiskThreshold}/${nextPolicy.highRiskThreshold}; escalation gates set to ${nextPolicy.reviewThreshold}/${nextPolicy.reportThreshold}.`,
       category: "policy",

@@ -23,6 +23,27 @@ describe("CipherSAR API", () => {
     expect(response.body.policy.highRiskThreshold).toBe(70);
   });
 
+  it("generates a reviewer report with a safe local fallback", async () => {
+    const investigation = await request(app)
+      .post("/api/investigations")
+      .send({ query: "Find structuring patterns in the last 30 days" });
+
+    const response = await request(app)
+      .post("/api/reports")
+      .send({
+        investigation: investigation.body,
+        template: "sar_review_brief",
+      });
+
+    expect(response.status).toBe(200);
+    expect(response.body.investigationId).toBe(
+      investigation.body.investigationId,
+    );
+    expect(response.body.sections.length).toBeGreaterThanOrEqual(3);
+    expect(response.body.disclaimer).toContain("human");
+    expect(["gemini", "local"]).toContain(response.body.source);
+  });
+
   it("returns the synthetic dataset for workspace views", async () => {
     const response = await request(app).get("/api/dataset");
     expect(response.status).toBe(200);

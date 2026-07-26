@@ -1,9 +1,11 @@
 import cors from "cors";
 import express, { type ErrorRequestHandler } from "express";
+import type { GenerateReportRequest, InvestigationResponse } from "@ciphersar/shared";
 import { z } from "zod";
 import { InvestigationAgent } from "./agent/engine";
 import { createSampleDataset } from "./data/sample-data";
 import { getModelMetadata } from "./ml/model";
+import { generateInvestigationReport } from "./reports/generator";
 
 const transactionSchema = z.object({
   id: z.string().min(1),
@@ -54,6 +56,46 @@ const analyzeSchema = z.object({
       "Policy thresholds must be ordered from lower to higher severity.",
     )
     .optional(),
+});
+
+const reportSchema = z.object({
+  template: z.enum([
+    "executive_summary",
+    "case_narrative",
+    "sar_review_brief",
+  ]),
+  investigation: z
+    .object({
+      investigationId: z.string().min(1),
+      generatedAt: z.string().datetime(),
+      decisionSummary: z.object({
+        userRequest: z.string().min(1),
+        detectedIntent: z.string().min(1),
+        selectedTools: z.array(z.string()),
+      }).passthrough(),
+      metrics: z.object({
+        inputTransactions: z.number().nonnegative(),
+        analyzedTransactions: z.number().nonnegative(),
+        analyzedCustomers: z.number().nonnegative(),
+        flaggedEntities: z.number().nonnegative(),
+        highRiskEntities: z.number().nonnegative(),
+      }).passthrough(),
+      findings: z.array(z.object({
+        entityId: z.string().min(1),
+        riskLevel: z.enum(["low", "medium", "high"]),
+        riskScore: z.number().min(0).max(100),
+        recommendedAction: z.enum(["monitor", "review", "report"]),
+      }).passthrough()),
+      summary: z.string(),
+      safeguards: z.object({
+        limitations: z.array(z.string()),
+      }).passthrough(),
+      model: z.object({
+        id: z.string(),
+        type: z.string(),
+      }).passthrough(),
+    })
+    .passthrough(),
 });
 
 export function createApp(): express.Express {
@@ -116,6 +158,19 @@ export function createApp(): express.Express {
       const parsed = analyzeSchema.parse(request.body);
       const result = await agent.analyze(parsed);
       response.status(200).json(result);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.post("/api/reports", async (request, response, next) => {
+    try {
+      const parsed = reportSchema.parse(request.body);
+      const report = await generateInvestigationReport({
+        template: parsed.template,
+        investigation: parsed.investigation as unknown as InvestigationResponse,
+      } satisfies GenerateReportRequest);
+      response.status(200).json(report);
     } catch (error) {
       next(error);
     }

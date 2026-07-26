@@ -1,0 +1,151 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-07-26T08:30:00.000Z",
+  "title": "Design System: CipherSAR",
+  "extensions": {
+    "colorMeta": {
+      "regulatory-ink": {
+        "role": "primary",
+        "displayName": "Regulatory Ink",
+        "canonical": "#0B1F33",
+        "tonalRamp": ["#06111D", "#0B1F33", "#15334D", "#31516B", "#627A8F", "#AAB8C4", "#D8E0E7", "#F2F5F7"]
+      },
+      "evidence-green": {
+        "role": "primary",
+        "displayName": "Evidence Green",
+        "canonical": "#08775B",
+        "tonalRamp": ["#043D30", "#075F4A", "#08775B", "#269276", "#65B09B", "#A5D1C4", "#D5E9E3", "#EEF7F4"]
+      },
+      "signal-blue": {
+        "role": "secondary",
+        "displayName": "Signal Blue",
+        "canonical": "#176B87",
+        "tonalRamp": ["#0A3444", "#12566D", "#176B87", "#3C87A0", "#79ADBE", "#AFCDD7", "#DCE9ED", "#F0F6F8"]
+      },
+      "ledger-paper": {
+        "role": "neutral",
+        "displayName": "Ledger Paper",
+        "canonical": "#FFFFFF",
+        "tonalRamp": ["#0B1F33", "#445467", "#657487", "#98A7B4", "#C2CCD4", "#D8E0E7", "#F2F5F7", "#FFFFFF"]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Dossier Display",
+        "purpose": "Archivo headings give investigation and report titles compact archival authority."
+      },
+      "body": {
+        "displayName": "Operational Body",
+        "purpose": "Manrope supports long evidence explanations and interface guidance."
+      },
+      "label": {
+        "displayName": "Evidence Label",
+        "purpose": "JetBrains Mono aligns identifiers, measurements, scores, and provenance."
+      }
+    },
+    "shadows": [
+      {
+        "name": "focal-workspace",
+        "value": "0 22px 54px rgba(11,31,51,.12)",
+        "purpose": "The command surface and report paper when they sit above an operational workbench."
+      },
+      {
+        "name": "ambient-control",
+        "value": "0 8px 24px rgba(11,31,51,.055)",
+        "purpose": "Temporary overlays and elevated controls only."
+      }
+    ],
+    "motion": [
+      {
+        "name": "state-change",
+        "value": "150ms ease",
+        "purpose": "Quiet hover, focus, and selected-state feedback."
+      }
+    ],
+    "breakpoints": [
+      { "name": "mobile", "value": "720px" },
+      { "name": "navigation-overlay", "value": "960px" },
+      { "name": "compact-desktop", "value": "1180px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "One decisive action per region, rendered in regulatory ink.",
+      "html": "<button class=\"ds-button-primary\">Generate report</button>",
+      "css": ".ds-button-primary{min-height:40px;padding:0 15px;border:0;border-radius:6px;background:#0B1F33;color:#fff;font:700 11px Manrope,Arial,sans-serif;cursor:pointer;transition:background 150ms ease,transform 150ms ease}.ds-button-primary:hover{background:#15334D;transform:translateY(-1px)}.ds-button-primary:focus-visible{outline:3px solid rgba(8,119,91,.28);outline-offset:2px}"
+    },
+    {
+      "name": "Evidence Field",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "A white, precise field for analyst queries and selectors.",
+      "html": "<input class=\"ds-evidence-field\" value=\"Find structuring patterns in the last 30 days\" aria-label=\"Investigation query\">",
+      "css": ".ds-evidence-field{width:100%;min-height:44px;padding:0 13px;border:1px solid #B8C5CF;border-radius:6px;background:#fff;color:#0B1F33;font:500 13px Manrope,Arial,sans-serif}.ds-evidence-field:hover{border-color:#657487}.ds-evidence-field:focus{border-color:#08775B;outline:3px solid rgba(8,119,91,.13)}"
+    },
+    {
+      "name": "Workspace Navigation",
+      "kind": "nav",
+      "description": "Quiet index navigation with a ruled active state.",
+      "html": "<nav class=\"ds-nav\"><button>Investigations</button><button class=\"is-active\">AI Report Studio</button><button>Audit trail</button></nav>",
+      "css": ".ds-nav{display:grid;gap:2px;width:220px;padding:10px;background:#F9FBFC}.ds-nav button{min-height:40px;padding:0 10px;border:0;border-radius:6px;background:transparent;color:#526174;font:650 12px Manrope,Arial,sans-serif;text-align:left}.ds-nav button:hover{background:#EDF2F4;color:#0B1F33}.ds-nav .is-active{background:#E3EEEB;color:#0B1F33;box-shadow:inset 1px 0 0 #08775B}.ds-nav button:focus-visible{outline:3px solid rgba(8,119,91,.22);outline-offset:1px}"
+    },
+    {
+      "name": "Risk Status",
+      "kind": "chip",
+      "description": "Compact semantic status with text and color.",
+      "html": "<span class=\"ds-risk-status\">High risk · 92</span>",
+      "css": ".ds-risk-status{display:inline-flex;align-items:center;padding:5px 7px;border-radius:4px;background:#FBEAEC;color:#BC3545;font:600 9px 'JetBrains Mono',Consolas,monospace}.ds-risk-status:focus-visible{outline:3px solid rgba(188,53,69,.2);outline-offset:2px}"
+    },
+    {
+      "name": "Report Dossier",
+      "kind": "custom",
+      "description": "The signature paper surface that keeps evidence, provenance, limitations, and export together.",
+      "html": "<article class=\"ds-report\"><header><strong>CipherSAR</strong><span>AI report dossier</span></header><h2>Executive investigation summary</h2><p>Evidence-led reviewer draft with mandatory human validation.</p></article>",
+      "css": ".ds-report{width:520px;padding:34px;background:#fff;color:#0B1F33;box-shadow:0 18px 44px rgba(11,31,51,.12);font:450 13px/1.65 Manrope,Arial,sans-serif}.ds-report header{display:flex;justify-content:space-between;padding-bottom:12px;border-bottom:2px solid #0B1F33}.ds-report header span{color:#657487;font:600 8px 'JetBrains Mono',Consolas,monospace;text-transform:uppercase}.ds-report h2{margin:34px 0 10px;font:700 30px/1.08 Archivo,Arial,sans-serif;letter-spacing:-.035em}.ds-report p{margin:0;color:#445467}"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Regulatory Atlas",
+    "overview": "CipherSAR feels like a precise intelligence desk assembled from modern transaction ledgers, investigation dossiers, and risk-committee briefing material. Information is dense but ordered, and the memorable object is the report dossier.",
+    "keyCharacteristics": [
+      "Ledger-like alignment and compact labels for evidence.",
+      "Editorial hierarchy without decorative headlines.",
+      "Restrained color with high-meaning accents.",
+      "Visible analytical scope, provenance, and human control.",
+      "Responsive density that becomes stacked records on small screens."
+    ],
+    "rules": [
+      {
+        "name": "The Sparse Signal Rule",
+        "body": "Accent color communicates state or action; it never becomes ambient decoration.",
+        "section": "colors"
+      },
+      {
+        "name": "The Evidence Type Rule",
+        "body": "Use monospace only where a reviewer benefits from exact alignment or machine-like provenance.",
+        "section": "typography"
+      },
+      {
+        "name": "The Paper Stack Rule",
+        "body": "A shadow must imply a real layer in the analyst workflow; ordinary panels remain flat.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do align scores, identifiers, amounts, and timestamps for rapid comparison.",
+      "Do expose tool selection, skipped work, provenance, and limitations near conclusions.",
+      "Do use empty, loading, error, and AI-fallback states that explain the next safe action.",
+      "Do keep the application primarily light and readable during long review sessions."
+    ],
+    "donts": [
+      "Don't recreate the generic dashboard pattern of evenly sized floating statistic cards.",
+      "Don't use neon glows, glassmorphism, or cyber-security theatrics.",
+      "Don't hide consequential actions behind icon-only controls.",
+      "Don't imply that an AI-generated draft is a filed SAR or replaces human review.",
+      "Don't expose API keys or customer evidence in client-side configuration."
+    ]
+  }
+}
