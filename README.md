@@ -15,6 +15,28 @@ The interface is presented as a bank-neutral internal Financial Crime Compliance
 
 The frontend receives `VITE_API_BASE_URL` at build time and communicates with the Render API over HTTPS. The free Render service can take up to approximately 50 seconds to wake after a period of inactivity.
 
+## Product walkthrough
+
+These reviewer-facing surfaces show how CipherSAR moves from a natural-language compliance question to explainable, human-governed decision support. The screens use the deterministic demonstration dataset, so judges can reproduce the same investigation flow locally or through the live deployment.
+
+### Query-aware command center
+
+![CipherSAR command center showing the adaptive investigation agent and agent-readiness panel](docs/screenshots/command-center.png)
+
+The command center is the starting point for every investigation. An analyst describes the activity to examine in plain language, and CipherSAR extracts the intent, filters, entity, and AML pattern before selecting only the necessary analytical tools. The readiness panel exposes the available toolset, active model registry, and mandatory human-escalation gate instead of hiding the agent's operating state.
+
+### AI Report Studio
+
+![CipherSAR AI Report Studio showing a case narrative and downloadable reviewer dossier](docs/screenshots/ai-report-studio.png)
+
+Report Studio converts a completed investigation into an executive summary, case narrative, or SAR review brief. Every draft remains linked to its source investigation and evidence, identifies whether Gemini or the deterministic local fallback produced the narrative, and requires reviewer confirmation before PDF export. The report is decision support for a compliance professional—not an automatically filed regulatory report.
+
+### Policy settings and human approval
+
+![CipherSAR policy settings showing configurable risk bands and escalation controls](docs/screenshots/policy-settings.png)
+
+The policy workspace lets an authorized reviewer calibrate medium- and high-risk bands, analyst-review thresholds, report thresholds, and minimum report confidence. Applied values affect subsequent backend investigations rather than acting as decorative controls. Reset and apply actions are explicit, while the permanent human-approval notice makes clear that configuration can change recommendations but cannot autonomously file a SAR/STR or close a case.
+
 ## Operational workspace
 
 The sidebar modules are fully functional:
