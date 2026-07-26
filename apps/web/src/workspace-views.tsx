@@ -11,15 +11,20 @@ import {
 import {
   Activity,
   AlertTriangle,
+  ArrowDownLeft,
   ArrowRight,
+  ArrowUpRight,
+  Banknote,
   BrainCircuit,
   Check,
   Clock3,
+  CreditCard,
   Database,
   FileCheck2,
   FileSearch,
   Filter,
   GitBranch,
+  Landmark,
   RefreshCw,
   Search,
   Settings,
@@ -68,6 +73,9 @@ interface WorkspaceViewsProps {
   imported: boolean;
   reviewStates: Record<string, ReviewStatus>;
   policy: AmlPolicy;
+  model: ModelMetadata | null;
+  modelLoading: boolean;
+  modelError: string | null;
   auditEvents: AuditEvent[];
   onOpenInvestigation: (investigation: InvestigationResponse) => void;
   onInvestigateCustomer: (customerId: string) => void;
@@ -75,6 +83,7 @@ interface WorkspaceViewsProps {
   onImport: () => void;
   onResetDataset: () => void;
   onRetryDataset: () => void;
+  onRetryModel: () => void;
   onApplyPolicy: (policy: AmlPolicy) => void;
 }
 
@@ -149,7 +158,14 @@ export function WorkspaceViews(props: WorkspaceViewsProps) {
         />
       );
     case "model":
-      return <ModelIntelligenceView model={props.result?.model ?? null} />;
+      return (
+        <ModelIntelligenceView
+          model={props.result?.model ?? props.model}
+          loading={props.modelLoading}
+          error={props.modelError}
+          onRetry={props.onRetryModel}
+        />
+      );
     case "audit":
       return <AuditTrailView events={props.auditEvents} />;
     case "policy":
@@ -220,7 +236,17 @@ function DatasetDependencyView({
   );
 }
 
-function ModelIntelligenceView({ model }: { model: ModelMetadata | null }) {
+function ModelIntelligenceView({
+  model,
+  loading,
+  error,
+  onRetry,
+}: {
+  model: ModelMetadata | null;
+  loading: boolean;
+  error: string | null;
+  onRetry: () => void;
+}) {
   if (!model) {
     return (
       <div className="workspace-view">
@@ -230,12 +256,33 @@ function ModelIntelligenceView({ model }: { model: ModelMetadata | null }) {
           description="Validated model performance, training provenance, and governance controls."
           icon={BrainCircuit}
         />
-        <section className="panel">
-          <Empty
-            icon={BrainCircuit}
-            title="Model metadata is loading"
-            detail="Run an investigation to load the active model card."
-          />
+        <section
+          className={`panel model-state ${error ? "model-state--error" : ""}`}
+          aria-live="polite"
+        >
+          <div className="model-state__mark">
+            {loading ? (
+              <RefreshCw className="spin" size={24} />
+            ) : (
+              <AlertTriangle size={24} />
+            )}
+          </div>
+          <div>
+            <span className="section-kicker">
+              {loading ? "Connecting to model registry" : "Model registry unavailable"}
+            </span>
+            <h2>{loading ? "Loading model metadata" : "Model card could not be loaded"}</h2>
+            <p>
+              {loading
+                ? "Retrieving the active model, validation metrics, and training provenance."
+                : error ?? "The model registry did not return an active model card."}
+            </p>
+          </div>
+          {!loading ? (
+            <button className="button button--primary" type="button" onClick={onRetry}>
+              <RefreshCw size={15} /> Retry model
+            </button>
+          ) : null}
         </section>
       </div>
     );
@@ -593,22 +640,27 @@ function CustomersView({
         description="Explore the active customer population, compare activity, and start a scoped investigation in one action."
         icon={Users}
       />
-      <section className="panel workspace-panel">
+      <section className="panel workspace-panel banking-ledger">
         <div className="workspace-toolbar">
-          <label className="workspace-search">
-            <Search size={16} />
-            <input
-              aria-label="Search customers"
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder="Search customer, segment, or country"
-            />
-          </label>
-          <span>{visible.length} customers</span>
+          <div className="workspace-toolbar__controls">
+            <label className="workspace-search">
+              <Search size={17} />
+              <input
+                aria-label="Search customers"
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder="Search customer, segment, or country"
+              />
+            </label>
+          </div>
+          <div className="workspace-toolbar__meta" aria-live="polite">
+            <span>Customer registry</span>
+            <strong>{visible.length.toLocaleString()} records</strong>
+          </div>
         </div>
         {visible.length ? (
           <div className="table-scroll">
-            <table className="workspace-table">
+            <table className="workspace-table workspace-table--customers">
               <thead>
                 <tr>
                   <th>Customer</th>
@@ -616,7 +668,7 @@ function CustomersView({
                   <th>Transactions</th>
                   <th>Volume</th>
                   <th>Current signal</th>
-                  <th />
+                  <th><span className="sr-only">Actions</span></th>
                 </tr>
               </thead>
               <tbody>
@@ -624,23 +676,33 @@ function CustomersView({
                   const summary = activity.get(customer.id);
                   const finding = findingMap.get(customer.id);
                   return (
-                    <tr key={customer.id}>
-                      <td data-label="Customer">
-                        <strong>{customer.name}</strong>
-                        <span>{customer.id}</span>
+                    <tr
+                      className={`ledger-row ${finding ? "ledger-row--alert" : ""}`}
+                      key={customer.id}
+                    >
+                      <td className="ledger-primary" data-label="Customer">
+                        <div className="ledger-identity">
+                          <span className="customer-mark" aria-hidden="true">
+                            {customerInitials(customer.name, customer.id)}
+                          </span>
+                          <div>
+                            <strong>{customer.name}</strong>
+                            <span>{customer.id}</span>
+                          </div>
+                        </div>
                       </td>
                       <td data-label="Profile">
-                        <strong>{customer.segment}</strong>
-                        <span>
-                          {customer.country} · {customer.riskRating}
+                        <span className="profile-chip">{customer.segment}</span>
+                        <span className="profile-meta">
+                          {customer.country} · {customer.riskRating} risk
                         </span>
                       </td>
-                      <td data-label="Transactions">
+                      <td className="ledger-number" data-label="Transactions">
                         <strong>{summary?.count ?? 0}</strong>
                         <span>recorded</span>
                       </td>
-                      <td data-label="Volume">
-                        <strong>
+                      <td className="ledger-number" data-label="Volume">
+                        <strong className="ledger-amount">
                           {formatInr(summary?.volume ?? 0)}
                         </strong>
                         <span>aggregate</span>
@@ -658,11 +720,11 @@ function CustomersView({
                       </td>
                       <td data-label="Action">
                         <button
-                          className="button button--quiet"
+                          className="button button--quiet ledger-action"
                           type="button"
                           onClick={() => onInvestigate(customer.id)}
                         >
-                          Investigate
+                          Investigate <ArrowRight size={14} aria-hidden="true" />
                         </button>
                       </td>
                     </tr>
@@ -718,39 +780,45 @@ function TransactionsView({
         description="Inspect activity in the active dataset, isolate transaction types, and pivot directly into a customer investigation."
         icon={Activity}
       />
-      <section className="panel workspace-panel">
+      <section className="panel workspace-panel banking-ledger">
         <div className="workspace-toolbar">
-          <label className="workspace-search">
-            <Search size={16} />
-            <input
-              aria-label="Search transactions"
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder="Search transaction or customer ID"
-            />
-          </label>
-          <label className="workspace-select">
-            <Filter size={14} />
-            <select
-              aria-label="Filter transaction type"
-              value={type}
-              onChange={(event) =>
-                setType(event.target.value as "all" | Transaction["type"])
-              }
-            >
-              <option value="all">All transaction types</option>
-              <option value="cash_deposit">Cash deposits</option>
-              <option value="cash_withdrawal">Cash withdrawals</option>
-              <option value="wire_in">Inbound wires</option>
-              <option value="wire_out">Outbound wires</option>
-              <option value="card">Card</option>
-              <option value="ach">ACH</option>
-            </select>
-          </label>
+          <div className="workspace-toolbar__controls">
+            <label className="workspace-search">
+              <Search size={17} />
+              <input
+                aria-label="Search transactions"
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder="Search transaction or customer ID"
+              />
+            </label>
+            <label className="workspace-select">
+              <Filter size={15} />
+              <select
+                aria-label="Filter transaction type"
+                value={type}
+                onChange={(event) =>
+                  setType(event.target.value as "all" | Transaction["type"])
+                }
+              >
+                <option value="all">All transaction types</option>
+                <option value="cash_deposit">Cash deposits</option>
+                <option value="cash_withdrawal">Cash withdrawals</option>
+                <option value="wire_in">Inbound wires</option>
+                <option value="wire_out">Outbound wires</option>
+                <option value="card">Card</option>
+                <option value="ach">ACH</option>
+              </select>
+            </label>
+          </div>
+          <div className="workspace-toolbar__meta" aria-live="polite">
+            <span>Transaction ledger</span>
+            <strong>{visible.length.toLocaleString()} records</strong>
+          </div>
         </div>
         {visible.length ? (
           <div className="table-scroll">
-            <table className="workspace-table">
+            <table className="workspace-table workspace-table--transactions">
               <thead>
                 <tr>
                   <th>Transaction</th>
@@ -759,32 +827,40 @@ function TransactionsView({
                   <th>Amount</th>
                   <th>Location / channel</th>
                   <th>Signal</th>
-                  <th />
+                  <th><span className="sr-only">Actions</span></th>
                 </tr>
               </thead>
               <tbody>
                 {visible.map((transaction) => (
-                  <tr key={transaction.id}>
-                    <td data-label="Transaction">
-                      <strong>{transaction.id}</strong>
-                      <span>{formatDateTime(transaction.timestamp)}</span>
+                  <tr
+                    className={`ledger-row ${flaggedIds.has(transaction.id) ? "ledger-row--alert" : ""}`}
+                    key={transaction.id}
+                  >
+                    <td className="ledger-primary" data-label="Transaction">
+                      <div className="ledger-identity">
+                        <TransactionGlyph type={transaction.type} />
+                        <div>
+                          <strong>{transaction.id}</strong>
+                          <span>{formatDateTime(transaction.timestamp)}</span>
+                        </div>
+                      </div>
                     </td>
                     <td data-label="Customer">
                       <strong>{transaction.customerId}</strong>
                     </td>
                     <td data-label="Type">
-                      <span className="type-chip">
+                      <span className={`type-chip type-chip--${transaction.type}`}>
                         {transaction.type.replaceAll("_", " ")}
                       </span>
                     </td>
-                    <td data-label="Amount">
-                      <strong>
+                    <td className="ledger-number" data-label="Amount">
+                      <strong className="ledger-amount">
                         {formatInr(transaction.amount)}
                       </strong>
                     </td>
                     <td data-label="Location / channel">
-                      <strong>{transaction.country}</strong>
-                      <span>{transaction.channel}</span>
+                      <span className="country-code">{transaction.country}</span>
+                      <span className="channel-label">{transaction.channel}</span>
                     </td>
                     <td data-label="Signal">
                       {flaggedIds.has(transaction.id) ? (
@@ -792,16 +868,18 @@ function TransactionsView({
                           linked evidence
                         </span>
                       ) : (
-                        <span className="status-muted">baseline</span>
+                        <span className="status-muted">
+                          <i aria-hidden="true" /> baseline
+                        </span>
                       )}
                     </td>
                     <td data-label="Action">
                       <button
-                        className="button button--quiet"
+                        className="button button--quiet ledger-action"
                         type="button"
                         onClick={() => onInvestigate(transaction.customerId)}
                       >
-                        Open customer
+                        Open customer <ArrowRight size={14} aria-hidden="true" />
                       </button>
                     </td>
                   </tr>
@@ -824,6 +902,45 @@ function TransactionsView({
       </section>
     </div>
   );
+}
+
+function TransactionGlyph({ type }: { type: Transaction["type"] }) {
+  const incoming = type === "cash_deposit" || type === "wire_in";
+  const outgoing = type === "cash_withdrawal" || type === "wire_out";
+  const Icon =
+    type === "cash_deposit" || type === "cash_withdrawal"
+      ? Banknote
+      : type === "wire_in"
+        ? ArrowDownLeft
+        : type === "wire_out"
+          ? ArrowUpRight
+          : type === "card"
+            ? CreditCard
+            : Landmark;
+  return (
+    <span
+      className={`transaction-mark ${
+        incoming
+          ? "transaction-mark--incoming"
+          : outgoing
+            ? "transaction-mark--outgoing"
+            : "transaction-mark--neutral"
+      }`}
+      aria-hidden="true"
+    >
+      <Icon size={17} />
+    </span>
+  );
+}
+
+function customerInitials(name: string, fallback: string): string {
+  const initials = name
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() ?? "")
+    .join("");
+  return initials || fallback.slice(-2).toUpperCase();
 }
 
 function DatasetsView({
@@ -938,10 +1055,15 @@ function DatasetsView({
 }
 
 function AuditTrailView({ events }: { events: AuditEvent[] }) {
-  const [category, setCategory] = useState<"all" | AuditEvent["category"]>("all");
-  const visible = events.filter(
-    (event) => category === "all" || event.category === category,
+  const [category, setCategory] = useState<AuditCategoryFilter>("all");
+  const visible = useMemo(
+    () => filterAuditEvents(events, category),
+    [category, events],
   );
+  const counts = useMemo(() => countAuditEvents(events), [events]);
+  const activeFilter =
+    AUDIT_CATEGORY_FILTERS.find((item) => item.value === category) ??
+    AUDIT_CATEGORY_FILTERS[0];
   return (
     <div className="workspace-view">
       <ViewHeader
@@ -950,51 +1072,137 @@ function AuditTrailView({ events }: { events: AuditEvent[] }) {
         description="Review a local, append-only record of investigations, dataset changes, review decisions, and policy updates."
         icon={GitBranch}
       />
-      <section className="panel workspace-panel">
-        <div className="workspace-toolbar">
-          <div className="segmented-control">
-            {(
-              [
-                "all",
-                "investigation",
-                "review",
-                "dataset",
-                "policy",
-                "system",
-              ] as const
-            ).map((value) => (
+      <section className="panel workspace-panel audit-register">
+        <div className="workspace-toolbar audit-toolbar">
+          <div className="segmented-control audit-filters" aria-label="Audit event filters">
+            {AUDIT_CATEGORY_FILTERS.map(({ value, label, icon: Icon }) => (
               <button
                 type="button"
                 className={category === value ? "active" : ""}
                 key={value}
+                aria-pressed={category === value}
                 onClick={() => setCategory(value)}
               >
-                {value}
+                <Icon size={14} aria-hidden="true" />
+                <span>{label}</span>
+                <em>{counts[value]}</em>
               </button>
             ))}
           </div>
-          <span>{visible.length} events</span>
+          <div className="audit-toolbar__summary" aria-live="polite">
+            <span>{activeFilter.label} events</span>
+            <strong>{visible.length.toLocaleString()} shown</strong>
+          </div>
         </div>
-        <div className="audit-list">
-          {visible.map((event) => (
-            <article key={event.id}>
-              <div className={`audit-dot audit-dot--${event.category}`} />
-              <div>
-                <div>
-                  <strong>{event.action}</strong>
-                  <span>{formatDateTime(event.occurredAt)}</span>
+        <header className="audit-register__header">
+          <div>
+            <span className="section-kicker">Append-only evidence</span>
+            <h2>Event register</h2>
+          </div>
+          <span className="audit-integrity">
+            <ShieldCheck size={14} /> Local audit controls active
+          </span>
+        </header>
+        <div
+          className="audit-list"
+          role="feed"
+          aria-label={`${activeFilter.label} audit events`}
+        >
+          {visible.map((event) => {
+            const categoryMeta =
+              AUDIT_CATEGORY_FILTERS.find((item) => item.value === event.category) ??
+              AUDIT_CATEGORY_FILTERS[0];
+            const EventIcon = categoryMeta.icon;
+            return (
+              <article
+              className={`audit-entry audit-entry--${event.category}`}
+              key={event.id}
+              aria-label={`${event.action}, ${categoryMeta.label}`}
+            >
+              <div className="audit-entry__marker" aria-hidden="true">
+                <EventIcon size={16} />
+              </div>
+              <div className="audit-entry__body">
+                <div className="audit-entry__heading">
+                  <div>
+                    <span className={`audit-category audit-category--${event.category}`}>
+                      {categoryMeta.label}
+                    </span>
+                    <strong>{event.action}</strong>
+                  </div>
+                  <time dateTime={event.occurredAt}>
+                    <Clock3 size={13} aria-hidden="true" />
+                    {formatDateTime(event.occurredAt)}
+                  </time>
                 </div>
                 <p>{event.detail}</p>
-                <small>
-                  {event.actor} · {event.category}
-                </small>
+                <footer className="audit-entry__footer">
+                  <span>{event.actor}</span>
+                  <code>{event.id}</code>
+                </footer>
               </div>
-            </article>
-          ))}
+              </article>
+            );
+          })}
         </div>
+        {!visible.length ? (
+          <div className="audit-empty">
+            <Empty
+              icon={activeFilter.icon}
+              title={`No ${activeFilter.label.toLowerCase()} events yet`}
+              detail={`Actions recorded in the ${activeFilter.label.toLowerCase()} category will appear here automatically.`}
+            />
+            <button
+              className="button button--quiet"
+              type="button"
+              onClick={() => setCategory("all")}
+            >
+              Show all events
+            </button>
+          </div>
+        ) : null}
       </section>
     </div>
   );
+}
+
+export type AuditCategoryFilter = "all" | AuditEvent["category"];
+
+const AUDIT_CATEGORY_FILTERS = [
+  { value: "all", label: "All", icon: Filter },
+  { value: "investigation", label: "Investigation", icon: FileSearch },
+  { value: "review", label: "Review", icon: FileCheck2 },
+  { value: "dataset", label: "Dataset", icon: Database },
+  { value: "policy", label: "Policy", icon: Settings },
+  { value: "system", label: "System", icon: ShieldCheck },
+] as const satisfies ReadonlyArray<{
+  value: AuditCategoryFilter;
+  label: string;
+  icon: typeof Activity;
+}>;
+
+export function filterAuditEvents(
+  events: AuditEvent[],
+  category: AuditCategoryFilter,
+): AuditEvent[] {
+  return events.filter(
+    (event) => category === "all" || event.category === category,
+  );
+}
+
+export function countAuditEvents(
+  events: AuditEvent[],
+): Record<AuditCategoryFilter, number> {
+  const counts: Record<AuditCategoryFilter, number> = {
+    all: events.length,
+    investigation: 0,
+    review: 0,
+    dataset: 0,
+    policy: 0,
+    system: 0,
+  };
+  for (const event of events) counts[event.category] += 1;
+  return counts;
 }
 
 function PolicySettingsView({

@@ -6,6 +6,9 @@ import {
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 import {
+  countAuditEvents,
+  filterAuditEvents,
+  type AuditEvent,
   type WorkspaceView,
   WorkspaceViews,
 } from "./workspace-views";
@@ -135,6 +138,9 @@ describe("workspace sidebar views", () => {
           imported={false}
           reviewStates={{}}
           policy={DEFAULT_AML_POLICY}
+          model={investigation.model}
+          modelLoading={false}
+          modelError={null}
           auditEvents={[]}
           onOpenInvestigation={vi.fn()}
           onInvestigateCustomer={vi.fn()}
@@ -142,6 +148,7 @@ describe("workspace sidebar views", () => {
           onImport={vi.fn()}
           onResetDataset={vi.fn()}
           onRetryDataset={vi.fn()}
+          onRetryModel={vi.fn()}
           onApplyPolicy={vi.fn()}
         />,
       );
@@ -168,6 +175,9 @@ describe("workspace sidebar views", () => {
         imported={false}
         reviewStates={{}}
         policy={DEFAULT_AML_POLICY}
+        model={investigation.model}
+        modelLoading={false}
+        modelError={null}
         auditEvents={[]}
         onOpenInvestigation={vi.fn()}
         onInvestigateCustomer={vi.fn()}
@@ -175,10 +185,44 @@ describe("workspace sidebar views", () => {
         onImport={vi.fn()}
         onResetDataset={vi.fn()}
         onRetryDataset={vi.fn()}
+        onRetryModel={vi.fn()}
         onApplyPolicy={vi.fn()}
       />,
     );
     expect(markup).toContain("Retry dataset");
     expect(markup).toContain("CipherSAR API is unavailable");
+  });
+
+  it("filters and counts every supported audit category", () => {
+    const categories: AuditEvent["category"][] = [
+      "investigation",
+      "review",
+      "dataset",
+      "policy",
+      "system",
+    ];
+    const events = categories.map((category, index) => ({
+      id: `AUD-${index}`,
+      occurredAt: "2026-07-25T00:00:00.000Z",
+      actor: "Test analyst",
+      action: `${category} event`,
+      detail: "Test audit detail",
+      category,
+    }));
+
+    expect(filterAuditEvents(events, "all")).toHaveLength(5);
+    for (const category of categories) {
+      expect(filterAuditEvents(events, category)).toEqual([
+        expect.objectContaining({ category }),
+      ]);
+    }
+    expect(countAuditEvents(events)).toEqual({
+      all: 5,
+      investigation: 1,
+      review: 1,
+      dataset: 1,
+      policy: 1,
+      system: 1,
+    });
   });
 });

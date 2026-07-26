@@ -17,8 +17,11 @@ import {
   Bell,
   BrainCircuit,
   Check,
+  ChevronDown,
   ChevronRight,
   CircleDot,
+  CircleUserRound,
+  Command,
   Database,
   FileCheck2,
   FileSearch,
@@ -30,6 +33,8 @@ import {
   LockKeyhole,
   Menu,
   Network,
+  PanelLeftClose,
+  PanelLeftOpen,
   RefreshCw,
   Route,
   ScrollText,
@@ -51,7 +56,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { getDataset, runInvestigation } from "./api";
+import { getDataset, getModelMetadata, runInvestigation } from "./api";
 import {
   type AuditEvent,
   customersFromTransactions,
@@ -75,6 +80,21 @@ const EXAMPLES = [
   "Is customer ID 4521 suspicious?",
   "Analyse this dataset for suspicious activity",
 ];
+
+export function formatSyncAge(lastSyncedAt: number, now: number): string {
+  const elapsedSeconds = Math.max(0, Math.floor((now - lastSyncedAt) / 1_000));
+  if (elapsedSeconds < 60) return "just now";
+  const elapsedMinutes = Math.floor(elapsedSeconds / 60);
+  if (elapsedMinutes < 60) {
+    return `${elapsedMinutes} ${elapsedMinutes === 1 ? "minute" : "minutes"} ago`;
+  }
+  const elapsedHours = Math.floor(elapsedMinutes / 60);
+  if (elapsedHours < 24) {
+    return `${elapsedHours} ${elapsedHours === 1 ? "hour" : "hours"} ago`;
+  }
+  const elapsedDays = Math.floor(elapsedHours / 24);
+  return `${elapsedDays} ${elapsedDays === 1 ? "day" : "days"} ago`;
+}
 
 const NAV_ITEMS = [
   { id: "command", label: "Command center", icon: LayoutDashboard },
@@ -122,13 +142,23 @@ export function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [workspaceSearchOpen, setWorkspaceSearchOpen] = useState(false);
+  const [workspaceSearch, setWorkspaceSearch] = useState("");
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const [compactNavigation, setCompactNavigation] = useState(false);
   const [activeView, setActiveView] = useState<WorkspaceView>("command");
   const [importedTransactions, setImportedTransactions] = useState<Transaction[]>([]);
   const [importedCustomers, setImportedCustomers] = useState<Customer[]>([]);
   const [dataset, setDataset] = useState<DatasetResponse | null>(null);
   const [datasetLoading, setDatasetLoading] = useState(true);
   const [datasetError, setDatasetError] = useState<string | null>(null);
+  const [modelMetadata, setModelMetadata] = useState<ModelMetadata | null>(null);
+  const [modelLoading, setModelLoading] = useState(true);
+  const [modelError, setModelError] = useState<string | null>(null);
   const [datasetName, setDatasetName] = useState("Global retail transactions");
+  const [lastSyncedAt, setLastSyncedAt] = useState<number | null>(null);
+  const [syncClock, setSyncClock] = useState(() => Date.now());
   const [history, setHistory] = useState<InvestigationResponse[]>([]);
   const [reviewStates, setReviewStates] = useState<Record<string, ReviewStatus>>(
     {},
@@ -145,6 +175,14 @@ export function App() {
     },
   ]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const menuButtonRef = useRef<HTMLButtonElement>(null);
+  const sidebarCloseRef = useRef<HTMLButtonElement>(null);
+  const sidebarRef = useRef<HTMLElement>(null);
+  const workspaceSearchInputRef = useRef<HTMLInputElement>(null);
+  const workspaceSearchTriggerRef = useRef<HTMLButtonElement>(null);
+  const workspaceSearchShellRef = useRef<HTMLDivElement>(null);
+  const profileMenuShellRef = useRef<HTMLDivElement>(null);
+  const investigationRequestRef = useRef(0);
   const hasBootstrapped = useRef(false);
 
   const appendAudit = useCallback(
@@ -168,6 +206,15 @@ export function App() {
       const sample = await getDataset();
       setDataset(sample);
       setDatasetName("Global retail transactions");
+      const syncedAt = Date.now();
+      setLastSyncedAt(syncedAt);
+      setSyncClock(syncedAt);
+      appendAudit({
+        actor: "CipherSAR",
+        action: "Active dataset synchronized",
+        detail: `${sample.transactions.length} transactions across ${sample.customers.length} customers were loaded and validated.`,
+        category: "dataset",
+      });
       return sample;
     } catch (caught) {
       setDataset(null);
@@ -180,6 +227,26 @@ export function App() {
     } finally {
       setDatasetLoading(false);
     }
+  }, [appendAudit]);
+
+  const loadModel = useCallback(async (): Promise<ModelMetadata | null> => {
+    setModelLoading(true);
+    setModelError(null);
+    try {
+      const metadata = await getModelMetadata();
+      setModelMetadata(metadata);
+      return metadata;
+    } catch (caught) {
+      setModelMetadata(null);
+      setModelError(
+        caught instanceof Error
+          ? caught.message
+          : "The active model card could not be loaded.",
+      );
+      return null;
+    } finally {
+      setModelLoading(false);
+    }
   }, []);
 
   const investigate = useCallback(
@@ -189,6 +256,7 @@ export function App() {
       customers: Customer[] = importedCustomers,
       effectivePolicy: AmlPolicy = policy,
     ) => {
+      const requestId = ++investigationRequestRef.current;
       setLoading(true);
       setError(null);
       try {
@@ -198,7 +266,10 @@ export function App() {
           ...(transactions.length && customers.length ? { customers } : {}),
           policy: effectivePolicy,
         });
+        if (requestId !== investigationRequestRef.current) return;
         setResult(response);
+        setModelMetadata(response.model);
+        setModelError(null);
         setSelectedId(response.findings[0]?.entityId ?? null);
         setHistory((current) => [
           response,
@@ -220,9 +291,10 @@ export function App() {
           category: "investigation",
         });
       } catch (caught) {
+        if (requestId !== investigationRequestRef.current) return;
         setError(caught instanceof Error ? caught.message : "Unexpected error");
       } finally {
-        setLoading(false);
+        if (requestId === investigationRequestRef.current) setLoading(false);
       }
     },
     [
@@ -237,7 +309,111 @@ export function App() {
     if (hasBootstrapped.current) return;
     hasBootstrapped.current = true;
     void loadDataset();
-  }, [loadDataset]);
+    void loadModel();
+  }, [loadDataset, loadModel]);
+
+  useEffect(() => {
+    const intervalId = window.setInterval(() => setSyncClock(Date.now()), 30_000);
+    return () => window.clearInterval(intervalId);
+  }, []);
+
+  useEffect(() => {
+    if (!mobileNavOpen) return;
+    const sidebar = sidebarRef.current;
+    const focusable = Array.from(
+      sidebar?.querySelectorAll<HTMLElement>(
+        'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+      ) ?? [],
+    ).filter((element) => element.getClientRects().length > 0);
+    const first = sidebarCloseRef.current ?? focusable[0];
+    const last = focusable[focusable.length - 1];
+    first?.focus();
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        setMobileNavOpen(false);
+        return;
+      }
+      if (event.key !== "Tab" || !first || !last) return;
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("keydown", onKeyDown);
+      menuButtonRef.current?.focus();
+    };
+  }, [mobileNavOpen]);
+
+  useEffect(() => {
+    const media = window.matchMedia("(max-width: 980px)");
+    const updateNavigationMode = () => setCompactNavigation(media.matches);
+    updateNavigationMode();
+    media.addEventListener("change", updateNavigationMode);
+    return () => media.removeEventListener("change", updateNavigationMode);
+  }, []);
+
+  useEffect(() => {
+    const onWorkspaceShortcut = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null;
+      const typing =
+        target?.tagName === "INPUT" ||
+        target?.tagName === "TEXTAREA" ||
+        target?.tagName === "SELECT" ||
+        target?.isContentEditable;
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
+        event.preventDefault();
+        setProfileMenuOpen(false);
+        setWorkspaceSearchOpen(true);
+        window.requestAnimationFrame(() => workspaceSearchInputRef.current?.focus());
+      } else if (event.key === "/" && !typing) {
+        event.preventDefault();
+        setProfileMenuOpen(false);
+        setWorkspaceSearchOpen(true);
+        window.requestAnimationFrame(() => workspaceSearchInputRef.current?.focus());
+      } else if (event.key === "Escape") {
+        const searchHadFocus =
+          workspaceSearchShellRef.current?.contains(document.activeElement);
+        setWorkspaceSearchOpen(false);
+        setProfileMenuOpen(false);
+        if (searchHadFocus) {
+          window.requestAnimationFrame(() =>
+            workspaceSearchTriggerRef.current?.focus(),
+          );
+        }
+      }
+    };
+    document.addEventListener("keydown", onWorkspaceShortcut);
+    return () => document.removeEventListener("keydown", onWorkspaceShortcut);
+  }, []);
+
+  useEffect(() => {
+    if (!workspaceSearchOpen && !profileMenuOpen) return;
+    const closeDetachedMenus = (event: PointerEvent) => {
+      const target = event.target as Node;
+      if (
+        workspaceSearchOpen &&
+        !workspaceSearchShellRef.current?.contains(target)
+      ) {
+        setWorkspaceSearchOpen(false);
+      }
+      if (
+        profileMenuOpen &&
+        !profileMenuShellRef.current?.contains(target)
+      ) {
+        setProfileMenuOpen(false);
+      }
+    };
+    document.addEventListener("pointerdown", closeDetachedMenus);
+    return () => document.removeEventListener("pointerdown", closeDetachedMenus);
+  }, [profileMenuOpen, workspaceSearchOpen]);
 
   const selected = useMemo(
     () =>
@@ -253,6 +429,8 @@ export function App() {
   };
 
   const updatePreparedQuery = (nextQuery: string) => {
+    investigationRequestRef.current += 1;
+    setLoading(false);
     setQuery(nextQuery);
     setResult(null);
     setSelectedId(null);
@@ -262,6 +440,8 @@ export function App() {
   const onImport = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
+    investigationRequestRef.current += 1;
+    setLoading(false);
     try {
       const transactions = parseTransactionsCsv(await file.text());
       const customers = customersFromTransactions(transactions);
@@ -277,6 +457,9 @@ export function App() {
       setDatasetError(null);
       setDatasetLoading(false);
       setDatasetName(file.name);
+      const syncedAt = Date.now();
+      setLastSyncedAt(syncedAt);
+      setSyncClock(syncedAt);
       appendAudit({
         actor: "Compliance analyst",
         action: "Dataset imported",
@@ -387,18 +570,58 @@ export function App() {
       (reviewStates[findingReviewKey(finding)] ?? "pending") !== "resolved",
   ).length;
 
+  const activeDestination = [...NAV_ITEMS, ...SYSTEM_NAV_ITEMS].find(
+    (item) => item.id === activeView,
+  );
+  const searchableDestinations = [...NAV_ITEMS, ...SYSTEM_NAV_ITEMS].filter(
+    (item) =>
+      item.label.toLowerCase().includes(workspaceSearch.trim().toLowerCase()),
+  );
+
+  const openDestination = (view: WorkspaceView) => {
+    navigate(view);
+    setWorkspaceSearch("");
+    setWorkspaceSearchOpen(false);
+    setProfileMenuOpen(false);
+  };
+
+  /*
+   * THESIS: A high-stakes signal room that refuses the familiar wide-sidebar card dashboard.
+   * OWN-WORLD: Chalk workstage, graphite rail, cobalt evidence tape, and ruled white sheets.
+   * STORY: Ask a question → inspect the agent plan → review evidence → decide or report.
+   * FIRST VIEWPORT: Expandable graphite instrument, searchable context strip, asymmetric command stage, primary Investigate action.
+   * FORM: Candidate 6, concept A + C composition, seed 86fadf64.
+   */
   return (
-    <div className="app-shell">
-      <aside className={`sidebar ${mobileNavOpen ? "sidebar--open" : ""}`}>
+    <div
+      className={`app-shell ${sidebarCollapsed ? "app-shell--rail-collapsed" : ""}`}
+    >
+      <aside
+        ref={sidebarRef}
+        className={`sidebar ${mobileNavOpen ? "sidebar--open" : ""}`}
+        aria-label="Application navigation"
+        aria-hidden={compactNavigation && !mobileNavOpen}
+        inert={compactNavigation && !mobileNavOpen}
+      >
         <div className="brand">
           <div className="brand__mark" aria-hidden="true">
-            <ShieldCheck size={20} strokeWidth={2.25} />
+            <img src="/ciphersar-mark.png" alt="" />
           </div>
           <div>
             <strong>CipherSAR</strong>
-            <span>Financial Crime Compliance</span>
+            <span>AML intelligence</span>
           </div>
           <button
+            className="icon-button rail-toggle"
+            type="button"
+            aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+            aria-expanded={!sidebarCollapsed}
+            onClick={() => setSidebarCollapsed((current) => !current)}
+          >
+            {sidebarCollapsed ? <PanelLeftOpen size={17} /> : <PanelLeftClose size={17} />}
+          </button>
+          <button
+            ref={sidebarCloseRef}
             className="icon-button sidebar__close"
             onClick={() => setMobileNavOpen(false)}
             aria-label="Close navigation"
@@ -414,6 +637,7 @@ export function App() {
               className={`nav-item ${activeView === id ? "nav-item--active" : ""}`}
               key={id}
               type="button"
+              title={label}
               aria-current={activeView === id ? "page" : undefined}
               onClick={() => navigate(id)}
             >
@@ -430,6 +654,7 @@ export function App() {
               className={`nav-item ${activeView === id ? "nav-item--active" : ""}`}
               key={id}
               type="button"
+              title={label}
               aria-current={activeView === id ? "page" : undefined}
               onClick={() => navigate(id)}
             >
@@ -462,12 +687,105 @@ export function App() {
       <div className="workspace">
         <header className="topbar">
           <button
+            ref={menuButtonRef}
             className="icon-button menu-button"
             onClick={() => setMobileNavOpen(true)}
             aria-label="Open navigation"
           >
             <Menu size={20} />
           </button>
+          <div className="topbar__context">
+            <span>Workspace</span>
+            <strong>{activeDestination?.label ?? "Command center"}</strong>
+          </div>
+          <div className="workspace-search-shell" ref={workspaceSearchShellRef}>
+            <button
+              ref={workspaceSearchTriggerRef}
+              className="workspace-search-trigger"
+              type="button"
+              aria-label="Search workspace"
+              aria-expanded={workspaceSearchOpen}
+              onClick={() => {
+                setProfileMenuOpen(false);
+                setWorkspaceSearchOpen((current) => !current);
+                window.requestAnimationFrame(() => workspaceSearchInputRef.current?.focus());
+              }}
+            >
+              <Search size={15} />
+              <span>Search workspace</span>
+              <kbd title="Control or Command plus K"><Command size={11} /> K</kbd>
+            </button>
+            {workspaceSearchOpen ? (
+              <div
+                className="workspace-search-popover"
+                role="dialog"
+                aria-label="Workspace search"
+                onKeyDown={(event) => {
+                  if (event.key !== "ArrowDown" && event.key !== "ArrowUp") return;
+                  const items = Array.from(
+                    event.currentTarget.querySelectorAll<HTMLElement>(
+                      '[role="menuitem"]',
+                    ),
+                  );
+                  if (!items.length) return;
+                  event.preventDefault();
+                  const currentIndex = items.indexOf(
+                    document.activeElement as HTMLElement,
+                  );
+                  const nextIndex =
+                    event.key === "ArrowDown"
+                      ? currentIndex < items.length - 1
+                        ? currentIndex + 1
+                        : 0
+                      : currentIndex > 0
+                        ? currentIndex - 1
+                        : items.length - 1;
+                  items[nextIndex]?.focus();
+                }}
+              >
+                <label className="workspace-search-input">
+                  <Search size={17} />
+                  <input
+                    ref={workspaceSearchInputRef}
+                    value={workspaceSearch}
+                    onChange={(event) => setWorkspaceSearch(event.target.value)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" && searchableDestinations[0]) {
+                        event.preventDefault();
+                        openDestination(searchableDestinations[0].id);
+                      }
+                    }}
+                    placeholder="Find customers, reports, policy…"
+                    aria-label="Find a workspace destination"
+                  />
+                  <kbd>Esc</kbd>
+                </label>
+                <div className="workspace-search-results" role="menu" aria-label="Destinations">
+                  {searchableDestinations.length ? (
+                    searchableDestinations.map(({ id, label, icon: Icon }) => (
+                      <button
+                        key={id}
+                        type="button"
+                        role="menuitem"
+                        aria-current={activeView === id ? "page" : undefined}
+                        onClick={() => openDestination(id)}
+                      >
+                        <Icon size={16} />
+                        <span>{label}</span>
+                        {activeView === id ? <em>Current</em> : <ChevronRight size={14} />}
+                      </button>
+                    ))
+                  ) : (
+                    <div className="workspace-search-empty">
+                      <Search size={18} />
+                      <strong>No destination found</strong>
+                      <span>Try “customers”, “reports”, or “policy”.</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ) : null}
+          </div>
           <div className="dataset-status">
             <Database size={16} />
             <div>
@@ -481,8 +799,27 @@ export function App() {
             </span>
           </div>
           <div className="topbar__actions">
-            <span className="sync-status">
-              <RefreshCw size={14} /> Synced 2m ago
+            <span
+              className={`sync-status ${datasetError ? "sync-status--error" : ""}`}
+              aria-live="polite"
+              title={
+                lastSyncedAt
+                  ? `Last successful sync: ${new Date(lastSyncedAt).toLocaleString("en-IN")}`
+                  : "No successful dataset sync in this session"
+              }
+            >
+              <RefreshCw
+                className={datasetLoading ? "spin" : undefined}
+                size={14}
+                aria-hidden="true"
+              />
+              {datasetLoading
+                ? "Syncing"
+                : datasetError
+                  ? "Sync failed"
+                  : lastSyncedAt
+                    ? `Synced ${formatSyncAge(lastSyncedAt, syncClock)}`
+                    : "Not synced"}
             </span>
             <button
               className="icon-button"
@@ -505,76 +842,214 @@ export function App() {
             >
               Import data
             </Button>
+            <div className="profile-menu-shell" ref={profileMenuShellRef}>
+              <button
+                className="profile-trigger"
+                type="button"
+                aria-label="Open analyst profile menu"
+                aria-expanded={profileMenuOpen}
+                onClick={() => {
+                  setWorkspaceSearchOpen(false);
+                  setProfileMenuOpen((current) => !current);
+                }}
+              >
+                <span className="profile-trigger__avatar" aria-hidden="true">A</span>
+                <span className="profile-trigger__copy">
+                  <strong>Analyst</strong>
+                  <small>Decision support</small>
+                </span>
+                <ChevronDown size={14} />
+              </button>
+              {profileMenuOpen ? (
+                <div className="profile-menu" role="menu" aria-label="Analyst workspace menu">
+                  <div className="profile-menu__identity">
+                    <CircleUserRound size={19} />
+                    <div>
+                      <strong>Analyst workspace</strong>
+                      <span>Human review required</span>
+                    </div>
+                  </div>
+                  <button type="button" role="menuitem" onClick={() => openDestination("policy")}>
+                    <Settings size={16} />
+                    <span>Policy settings</span>
+                    <ChevronRight size={14} />
+                  </button>
+                  <button type="button" role="menuitem" onClick={() => openDestination("audit")}>
+                    <GitBranch size={16} />
+                    <span>Audit trail</span>
+                    <ChevronRight size={14} />
+                  </button>
+                  <div className="profile-menu__status">
+                    <span><i /> Controls active</span>
+                    <small>No autonomous filing</small>
+                  </div>
+                </div>
+              ) : null}
+            </div>
           </div>
         </header>
 
-        <main>
+        <main
+          className={
+            activeView === "command" && result
+              ? "investigation-workspace"
+              : undefined
+          }
+        >
           {activeView === "command" ? (
             <>
-          <section className="page-intro">
-            <div>
-              <span className="eyebrow">
-                <Sparkles size={14} /> Adaptive investigation agent
-              </span>
-              <h1>Investigate the signal.<br />Explain the decision.</h1>
-              <p>
-                Ask a compliance question in plain language. CipherSAR chooses
-                the minimum necessary tools and returns evidence you can defend.
-              </p>
-            </div>
-            <div className="trust-chip">
-              <ShieldCheck size={18} />
-              <div>
-                <span>Governance status</span>
-                <strong>Controls active</strong>
+          <section className="command-stage" aria-labelledby="command-heading">
+            <div className="command-stage__primary">
+              <div className="page-intro">
+                <div>
+                  <span className="eyebrow">
+                    <Sparkles size={14} /> Adaptive AML investigation agent
+                  </span>
+                  <h1>Investigate the signal.<br />Explain every decision.</h1>
+                  <p>
+                    Ask a compliance question in plain language. CipherSAR interprets
+                    the request, selects only the necessary tools, and returns
+                    evidence a reviewer can defend.
+                  </p>
+                </div>
               </div>
+
+              <ol className="agent-path-preview" aria-label="Adaptive agent workflow">
+                <li>
+                  <span>01</span>
+                  <Command size={17} aria-hidden="true" />
+                  <div>
+                    <strong>Understand the request</strong>
+                    <small>Intent, filters, entity, and AML pattern</small>
+                  </div>
+                </li>
+                <li>
+                  <span>02</span>
+                  <Route size={17} aria-hidden="true" />
+                  <div>
+                    <strong>Select only needed tools</strong>
+                    <small>Skip unnecessary EDA, features, or ML</small>
+                  </div>
+                </li>
+                <li>
+                  <span>03</span>
+                  <ShieldCheck size={17} aria-hidden="true" />
+                  <div>
+                    <strong>Return defensible evidence</strong>
+                    <small>Risk, explanation, and human-gated action</small>
+                  </div>
+                </li>
+              </ol>
+
+              <Card className="command-card">
+                <div className="command-card__top">
+                  <div className="agent-orb" aria-hidden="true">
+                    <Network size={22} />
+                  </div>
+                  <div>
+                    <h2 id="command-heading">What should I investigate?</h2>
+                    <span>
+                      Intent, filters, entities, and AML typologies are parsed automatically.
+                    </span>
+                  </div>
+                  <span className="command-card__mode">
+                    <i aria-hidden="true" /> Query-aware planner
+                  </span>
+                </div>
+                <form className="command-form" onSubmit={onSubmit}>
+                  <Search size={20} aria-hidden="true" />
+                  <input
+                    value={query}
+                    onChange={(event) => updatePreparedQuery(event.target.value)}
+                    placeholder="e.g. Find structuring patterns in the last 30 days"
+                    aria-label="Investigation query"
+                  />
+                  <Button
+                    type="submit"
+                    variant="primary"
+                    size="lg"
+                    loading={loading}
+                    disabled={query.trim().length < 3}
+                    leadingIcon={<Fingerprint size={17} />}
+                  >
+                    {loading ? "Investigating" : "Investigate"}
+                  </Button>
+                </form>
+                <div className="query-examples">
+                  <span>Try asking</span>
+                  {EXAMPLES.slice(0, 3).map((example) => (
+                    <button
+                      type="button"
+                      key={example}
+                      onClick={() => prepareInvestigation(example)}
+                    >
+                      {shortenExample(example)}
+                    </button>
+                  ))}
+                </div>
+              </Card>
             </div>
+
+            <aside className="command-brief" aria-label="Investigation readiness">
+              <div className="command-brief__index">Agent status</div>
+              <div className="command-brief__mark">
+                <Fingerprint size={28} />
+              </div>
+              <h2>Agent readiness</h2>
+              <dl>
+                <div>
+                  <dt>Intent parser</dt>
+                  <dd>Ready</dd>
+                </div>
+                <div>
+                  <dt>Analytical tools</dt>
+                  <dd>{Object.keys(TOOL_LABELS).length} available</dd>
+                </div>
+                <div>
+                  <dt>Escalation</dt>
+                  <dd>Human gated</dd>
+                </div>
+                <div>
+                  <dt>Model registry</dt>
+                  <dd>{modelMetadata ? "Active" : modelLoading ? "Connecting" : "Unavailable"}</dd>
+                </div>
+              </dl>
+              <div className="trust-chip">
+                <ShieldCheck size={18} />
+                <div>
+                  <span>Governance status</span>
+                  <strong>Controls active</strong>
+                </div>
+              </div>
+            </aside>
           </section>
 
-          <Card className="command-card" aria-labelledby="command-heading">
-            <div className="command-card__top">
-              <div className="agent-orb" aria-hidden="true">
-                <Network size={22} />
-              </div>
-              <div>
-                <h2 id="command-heading">What should I investigate?</h2>
-                <span>
-                  Intent, filters, entities, and AML typologies are parsed automatically.
-                </span>
-              </div>
+          <section className="signal-tape" aria-label="Prepared investigation context">
+            <div>
+              <span>Prepared intent</span>
+              <strong>{result?.parsedQuery.pattern?.replaceAll("_", " ") ?? "Awaiting query"}</strong>
             </div>
-            <form className="command-form" onSubmit={onSubmit}>
-              <Search size={20} aria-hidden="true" />
-              <input
-                value={query}
-                onChange={(event) => updatePreparedQuery(event.target.value)}
-                placeholder="e.g. Find structuring patterns in the last 30 days"
-                aria-label="Investigation query"
-              />
-              <Button
-                type="submit"
-                variant="primary"
-                size="lg"
-                loading={loading}
-                disabled={query.trim().length < 3}
-                leadingIcon={<Fingerprint size={17} />}
-              >
-                {loading ? "Investigating" : "Investigate"}
-              </Button>
-            </form>
-            <div className="query-examples">
-              <span>Try asking</span>
-              {EXAMPLES.slice(0, 3).map((example) => (
-                <button
-                  type="button"
-                  key={example}
-                  onClick={() => prepareInvestigation(example)}
-                >
-                  {shortenExample(example)}
-                </button>
-              ))}
+            <div>
+              <span>Active scope</span>
+              <strong>
+                {result
+                  ? `${result.decisionSummary.analyzedScope.transactions} transactions`
+                  : datasetLoading
+                    ? "Loading dataset"
+                    : `${dataset?.transactions.length ?? 0} transactions ready`}
+              </strong>
             </div>
-          </Card>
+            <div>
+              <span>Agent route</span>
+              <strong>
+                {result ? `${result.plan.steps.length} selected tools` : "Query-aware planning"}
+              </strong>
+            </div>
+            <div>
+              <span>Decision control</span>
+              <strong>Human review required</strong>
+            </div>
+          </section>
 
           {result ? (
             <>
@@ -653,6 +1128,9 @@ export function App() {
               imported={importedTransactions.length > 0}
               reviewStates={reviewStates}
               policy={policy}
+              model={modelMetadata}
+              modelLoading={modelLoading}
+              modelError={modelError}
               auditEvents={auditEvents}
               onOpenInvestigation={openInvestigation}
               onInvestigateCustomer={investigateCustomer}
@@ -660,6 +1138,7 @@ export function App() {
               onImport={() => fileInputRef.current?.click()}
               onResetDataset={() => void resetDataset()}
               onRetryDataset={() => void loadDataset()}
+              onRetryModel={() => void loadModel()}
               onApplyPolicy={applyPolicy}
             />
           )}
