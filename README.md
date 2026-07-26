@@ -302,10 +302,10 @@ See [Architecture and controls](docs/ARCHITECTURE.md) for the production-hardeni
 
 ## Contribution traceability
 
-All work must be committed from the contributor's own GitHub account. Do not rewrite authorship or commit another person's work under their name.
+The Git history records each contributor's implementation work through independently authored commits.
 
-- **Devesh Singhal** — repository owner and initial implementation.
-- **Ankit Marik** — collaborator (`AnkitKumar61`); trained-model integration, model intelligence UI, evaluation, and associated documentation are developed on the current feature branch.
+- **Devesh Singhal** — built the TypeScript workspace and shared contracts; implemented the adaptive AML API, query parser, planner, analytical tools, rule/statistical detectors, and deterministic demo data; developed the operational compliance workspaces and AI Report Studio; and completed production hardening, technical documentation, branding, and major interface-system work.
+- **Ankit Kumar** (`AnkitKumar61`) — trained and integrated the IBM AMLSim account-risk model; added model evaluation, portable inference, Model Intelligence, and governance documentation; expanded query-aware orchestration and AML feature engineering; improved policy, dataset, API-failure, currency, and investigation-confirmation flows; configured Render/Vercel deployment; and delivered responsive interface and Command Center refinements.
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) and [Contribution workflow](docs/CONTRIBUTIONS.md).
 
