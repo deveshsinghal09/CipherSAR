@@ -4,6 +4,7 @@ import type {
   GenerateReportRequest,
   GeneratedReport,
   InvestigationResponse,
+  ModelMetadata,
 } from "@ciphersar/shared";
 
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? "").replace(/\/+$/, "");
@@ -55,6 +56,24 @@ export async function getDataset(signal?: AbortSignal): Promise<DatasetResponse>
     );
   }
   return payload as DatasetResponse;
+}
+
+export async function getModelMetadata(
+  signal?: AbortSignal,
+): Promise<ModelMetadata> {
+  const response = await fetch(
+    apiUrl("/api/model"),
+    signal ? { signal } : undefined,
+  );
+  const payload = await readJson(response);
+  if (!response.ok) {
+    throw new Error(
+      response.status >= 500
+        ? "The CipherSAR API is unavailable. Start the API with `npm run dev` and retry."
+        : "The active model card could not be loaded.",
+    );
+  }
+  return payload as ModelMetadata;
 }
 
 export async function generateReport(

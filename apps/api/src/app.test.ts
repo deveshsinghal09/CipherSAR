@@ -49,6 +49,12 @@ describe("CipherSAR API", () => {
     expect(response.status).toBe(200);
     expect(response.body.customers.length).toBeGreaterThan(30);
     expect(response.body.transactions.length).toBeGreaterThan(100);
+    expect(response.body.customers[0].name).toBe("Aarav Mehta");
+    expect(
+      response.body.customers.some((customer: { name: string }) =>
+        customer.name.startsWith("Synthetic Customer"),
+      ),
+    ).toBe(false);
   });
 
   it("exposes the active trained model card", async () => {

@@ -20,6 +20,41 @@ function isoDaysAgo(now: Date, days: number, hour = 10): string {
   return date.toISOString();
 }
 
+const DEMO_CUSTOMER_NAMES = [
+  "Aarav Mehta",
+  "Sophia Carter",
+  "Liam Brooks",
+  "Noor Al-Farsi",
+  "Mei Lin Tan",
+  "Daniel Okafor",
+  "Meridian Foods Ltd",
+  "Priya Nair",
+  "Ethan Walker",
+  "Zara Rahman",
+  "Marcus Chen",
+  "Elena Rossi",
+  "Rohan Kapoor",
+  "Crescent Logistics LLC",
+  "Olivia Bennett",
+  "Hamza Siddiqui",
+  "Grace Morgan",
+  "Arjun Rao",
+  "Hannah Clarke",
+  "Samuel Lee",
+  "Pacific Trade Partners",
+  "Isha Verma",
+  "Adam Wilson",
+  "Leila Haddad",
+  "Nicholas Grant",
+  "Ananya Bose",
+  "Yusuf Khan",
+  "Harborline Technologies",
+  "Emilia Stone",
+  "Karan Malhotra",
+  "Chloe Martin",
+  "David Wong",
+] as const;
+
 export function createSampleDataset(now = new Date()): SampleDataset {
   const random = seeded(45_210_908);
   const customers: Customer[] = [];
@@ -33,7 +68,7 @@ export function createSampleDataset(now = new Date()): SampleDataset {
     const segment = index % 7 === 0 ? "business" : "retail";
     customers.push({
       id,
-      name: `Synthetic Customer ${index}`,
+      name: DEMO_CUSTOMER_NAMES[index - 1] ?? `Demo customer ${index}`,
       segment,
       country,
       riskRating: index % 11 === 0 ? "elevated" : "standard",

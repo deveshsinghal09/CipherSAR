@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { runInvestigation } from "./api";
+import { getModelMetadata, runInvestigation } from "./api";
 
 describe("web API client", () => {
   afterEach(() => {
@@ -31,5 +31,25 @@ describe("web API client", () => {
     await expect(
       runInvestigation({ query: "Flag high-risk customers" }),
     ).rejects.toThrow("Invalid investigation");
+  });
+
+  it("loads the active model card without requiring an investigation", async () => {
+    const model = {
+      id: "model-v1",
+      type: "balanced random forest",
+      status: "active",
+    };
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        new Response(JSON.stringify(model), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        }),
+      ),
+    );
+
+    await expect(getModelMetadata()).resolves.toEqual(model);
+    expect(fetch).toHaveBeenCalledWith("/api/model", undefined);
   });
 });

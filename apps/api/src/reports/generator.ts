@@ -9,6 +9,7 @@ import { z } from "zod";
 
 const GEMINI_ENDPOINT =
   "https://generativelanguage.googleapis.com/v1beta/interactions";
+// Stable production model; deployments may override it with GEMINI_MODEL.
 const DEFAULT_GEMINI_MODEL = "gemini-3.6-flash";
 const REPORT_DISCLAIMER =
   "AI-assisted decision-support draft. A qualified human compliance professional must validate the evidence, conclusions, and filing decision before escalation.";
