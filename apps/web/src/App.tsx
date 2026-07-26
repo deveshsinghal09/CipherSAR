@@ -898,158 +898,236 @@ export function App() {
         >
           {activeView === "command" ? (
             <>
-          <section className="command-stage" aria-labelledby="command-heading">
-            <div className="command-stage__primary">
-              <div className="page-intro">
+          <div className="command-dashboard">
+            <div className="command-dashboard__main">
+              <section className="command-stage" aria-labelledby="command-heading">
+                <div className="command-stage__primary">
+                  <div className="page-intro">
+                    <div className="page-intro__copy">
+                      <span className="eyebrow">
+                        <Sparkles size={14} /> Investigation command
+                      </span>
+                      <h1>Start an AML investigation</h1>
+                      <p>
+                        Describe the activity you want to examine. CipherSAR will interpret
+                        the request, select the relevant analytical tools, and return
+                        evidence your review team can defend.
+                      </p>
+                      <div className="command-controls" aria-label="Investigation safeguards">
+                        <span><ShieldCheck size={14} /> Human approval required</span>
+                        <span><GitBranch size={14} /> Every analytical action is logged</span>
+                      </div>
+                    </div>
+                    <div className="command-visual" aria-hidden="true">
+                      <i className="command-visual__trace command-visual__trace--one" />
+                      <i className="command-visual__trace command-visual__trace--two" />
+                      <div className="command-visual__document">
+                        <Search size={38} />
+                        <span />
+                        <span />
+                        <span />
+                      </div>
+                      <div className="command-visual__shield">
+                        <ShieldCheck size={28} />
+                      </div>
+                    </div>
+                  </div>
+
+                  <Card className="command-card">
+                    <div className="command-card__top">
+                      <div className="agent-orb" aria-hidden="true">
+                        <Network size={22} />
+                      </div>
+                      <div>
+                        <h2 id="command-heading">Investigation query</h2>
+                        <span>Analysis begins only after you select Investigate.</span>
+                      </div>
+                      <span className="command-card__mode">
+                        <Sparkles size={12} aria-hidden="true" /> AI assist
+                      </span>
+                    </div>
+                    <form className="command-form" onSubmit={onSubmit}>
+                      <Search size={20} aria-hidden="true" />
+                      <input
+                        value={query}
+                        onChange={(event) => updatePreparedQuery(event.target.value)}
+                        placeholder="e.g. Find structuring patterns in the last 30 days"
+                        aria-label="Investigation query"
+                      />
+                      <Button
+                        type="submit"
+                        variant="primary"
+                        size="lg"
+                        loading={loading}
+                        disabled={query.trim().length < 3}
+                        leadingIcon={<Fingerprint size={17} />}
+                      >
+                        {loading ? "Investigating" : "Investigate"}
+                      </Button>
+                    </form>
+                    <div className="query-examples">
+                      <span>Try examples</span>
+                      {EXAMPLES.map((example) => (
+                        <button
+                          type="button"
+                          key={example}
+                          onClick={() => prepareInvestigation(example)}
+                        >
+                          {shortenExample(example)}
+                        </button>
+                      ))}
+                    </div>
+                  </Card>
+                </div>
+              </section>
+
+              <section className="signal-tape" aria-label="Prepared investigation context">
                 <div>
-                  <span className="eyebrow">
-                    <Sparkles size={14} /> Adaptive AML investigation agent
-                  </span>
-                  <h1>Investigate the signal.<br />Explain every decision.</h1>
-                  <p>
-                    Ask a compliance question in plain language. CipherSAR interprets
-                    the request, selects only the necessary tools, and returns
-                    evidence a reviewer can defend.
-                  </p>
+                  <span>Prepared intent</span>
+                  <strong>{result?.parsedQuery.pattern?.replaceAll("_", " ") ?? "Awaiting query"}</strong>
+                  <small>Ready when you are</small>
                 </div>
-              </div>
-
-              <ol className="agent-path-preview" aria-label="Adaptive agent workflow">
-                <li>
-                  <span>01</span>
-                  <Command size={17} aria-hidden="true" />
-                  <div>
-                    <strong>Understand the request</strong>
-                    <small>Intent, filters, entity, and AML pattern</small>
-                  </div>
-                </li>
-                <li>
-                  <span>02</span>
-                  <Route size={17} aria-hidden="true" />
-                  <div>
-                    <strong>Select only needed tools</strong>
-                    <small>Skip unnecessary EDA, features, or ML</small>
-                  </div>
-                </li>
-                <li>
-                  <span>03</span>
-                  <ShieldCheck size={17} aria-hidden="true" />
-                  <div>
-                    <strong>Return defensible evidence</strong>
-                    <small>Risk, explanation, and human-gated action</small>
-                  </div>
-                </li>
-              </ol>
-
-              <Card className="command-card">
-                <div className="command-card__top">
-                  <div className="agent-orb" aria-hidden="true">
-                    <Network size={22} />
-                  </div>
-                  <div>
-                    <h2 id="command-heading">What should I investigate?</h2>
-                    <span>
-                      Intent, filters, entities, and AML typologies are parsed automatically.
-                    </span>
-                  </div>
-                  <span className="command-card__mode">
-                    <i aria-hidden="true" /> Query-aware planner
-                  </span>
+                <div>
+                  <span>Active scope</span>
+                  <strong>
+                    {result
+                      ? `${result.decisionSummary.analyzedScope.transactions} transactions`
+                      : datasetLoading
+                        ? "Loading dataset"
+                        : `${dataset?.transactions.length ?? 0} transactions ready`}
+                  </strong>
+                  <small>{dataset?.customers.length ?? 0} customer profiles</small>
                 </div>
-                <form className="command-form" onSubmit={onSubmit}>
-                  <Search size={20} aria-hidden="true" />
-                  <input
-                    value={query}
-                    onChange={(event) => updatePreparedQuery(event.target.value)}
-                    placeholder="e.g. Find structuring patterns in the last 30 days"
-                    aria-label="Investigation query"
-                  />
-                  <Button
-                    type="submit"
-                    variant="primary"
-                    size="lg"
-                    loading={loading}
-                    disabled={query.trim().length < 3}
-                    leadingIcon={<Fingerprint size={17} />}
+                <div>
+                  <span>Agent route</span>
+                  <strong>
+                    {result ? `${result.plan.steps.length} selected tools` : "Query-aware planning"}
+                  </strong>
+                  <small>Only relevant tools invoked</small>
+                </div>
+                <div>
+                  <span>Decision control</span>
+                  <strong>Human review required</strong>
+                  <small>Governance controls active</small>
+                </div>
+              </section>
+
+              <section className="quick-actions" aria-labelledby="quick-actions-heading">
+                <header>
+                  <div>
+                    <span className="section-kicker">Workspace shortcuts</span>
+                    <h2 id="quick-actions-heading">Quick actions</h2>
+                  </div>
+                </header>
+                <div className="quick-actions__grid">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      updatePreparedQuery("");
+                      setResult(null);
+                      setSelectedId(null);
+                      setError(null);
+                      window.scrollTo({ top: 0, behavior: "smooth" });
+                    }}
                   >
-                    {loading ? "Investigating" : "Investigate"}
-                  </Button>
-                </form>
-                <div className="query-examples">
-                  <span>Try asking</span>
-                  {EXAMPLES.slice(0, 3).map((example) => (
+                    <span><CircleDot size={18} /></span>
+                    <div><strong>New investigation</strong><small>Start a fresh AML query</small></div>
+                    <ChevronRight size={15} />
+                  </button>
+                  <button type="button" onClick={() => fileInputRef.current?.click()}>
+                    <span><UploadCloud size={18} /></span>
+                    <div><strong>Upload data</strong><small>Import transaction records</small></div>
+                    <ChevronRight size={15} />
+                  </button>
+                  <button type="button" onClick={() => navigate("customers")}>
+                    <span><Users size={18} /></span>
+                    <div><strong>Search customers</strong><small>Inspect customer activity</small></div>
+                    <ChevronRight size={15} />
+                  </button>
+                  <button type="button" onClick={() => navigate("review")}>
+                    <span><Bell size={18} /></span>
+                    <div><strong>Explore alerts</strong><small>Review open findings</small></div>
+                    <ChevronRight size={15} />
+                  </button>
+                  <button type="button" onClick={() => navigate("model")}>
+                    <span><BrainCircuit size={18} /></span>
+                    <div><strong>View model</strong><small>Inspect model intelligence</small></div>
+                    <ChevronRight size={15} />
+                  </button>
+                </div>
+              </section>
+            </div>
+
+            <aside className="command-dashboard__rail" aria-label="Command center status">
+              <section className="command-brief" aria-label="Investigation readiness">
+                <div className="command-brief__header">
+                  <div className="command-brief__mark"><Fingerprint size={21} /></div>
+                  <div>
+                    <div className="command-brief__index">System readiness</div>
+                    <h2>Ready to analyse</h2>
+                  </div>
+                  <span className="command-brief__live"><i aria-hidden="true" /> Live</span>
+                </div>
+                <dl>
+                  <div><dt><Network size={14} /> Intent parser</dt><dd>Ready</dd></div>
+                  <div><dt><BrainCircuit size={14} /> Analytical tools</dt><dd>{Object.keys(TOOL_LABELS).length} available</dd></div>
+                  <div><dt><Route size={14} /> Correlation engine</dt><dd>Optimized</dd></div>
+                  <div><dt><Database size={14} /> Model registry</dt><dd>{modelMetadata ? "Active" : modelLoading ? "Connecting" : "Unavailable"}</dd></div>
+                  <div><dt><ShieldCheck size={14} /> Escalation mode</dt><dd>Human gated</dd></div>
+                </dl>
+              </section>
+
+              <section className="rail-card governance-card">
+                <div className="rail-card__icon"><ShieldCheck size={22} /></div>
+                <div>
+                  <span className="section-kicker">Governance status</span>
+                  <h2>Controls active</h2>
+                  <p>Every investigation requires human approval before export or escalation.</p>
+                  <button type="button" onClick={() => navigate("policy")}>
+                    View policies <ArrowRight size={14} />
+                  </button>
+                </div>
+              </section>
+
+              <section className="rail-card recent-activity">
+                <header>
+                  <span className="section-kicker">Recent activity</span>
+                </header>
+                <div className="recent-activity__list">
+                  {history.slice(0, 2).map((investigation) => (
                     <button
                       type="button"
-                      key={example}
-                      onClick={() => prepareInvestigation(example)}
+                      key={investigation.investigationId}
+                      onClick={() => openInvestigation(investigation)}
                     >
-                      {shortenExample(example)}
+                      <span className="recent-activity__icon"><ShieldCheck size={15} /></span>
+                      <span>
+                        <strong>{investigation.investigationId}</strong>
+                        <small>{investigation.parsedQuery.pattern?.replaceAll("_", " ") ?? investigation.parsedQuery.intent.replaceAll("_", " ")}</small>
+                        <em>{formatCompactDate(investigation.generatedAt)}</em>
+                      </span>
+                      <i aria-hidden="true" />
                     </button>
                   ))}
+                  <div className="recent-activity__sync">
+                    <span className="recent-activity__icon"><Database size={15} /></span>
+                    <span>
+                      <strong>{datasetLoading ? "Dataset syncing" : datasetError ? "Dataset unavailable" : "Dataset ready"}</strong>
+                      <small>{datasetName}</small>
+                      <em>{lastSyncedAt ? formatSyncAge(lastSyncedAt, syncClock) : "Waiting for first sync"}</em>
+                    </span>
+                    <i aria-hidden="true" />
+                  </div>
+                  {!history.length ? (
+                    <p className="recent-activity__empty">Completed investigations will appear here.</p>
+                  ) : null}
                 </div>
-              </Card>
-            </div>
-
-            <aside className="command-brief" aria-label="Investigation readiness">
-              <div className="command-brief__index">Agent status</div>
-              <div className="command-brief__mark">
-                <Fingerprint size={28} />
-              </div>
-              <h2>Agent readiness</h2>
-              <dl>
-                <div>
-                  <dt>Intent parser</dt>
-                  <dd>Ready</dd>
-                </div>
-                <div>
-                  <dt>Analytical tools</dt>
-                  <dd>{Object.keys(TOOL_LABELS).length} available</dd>
-                </div>
-                <div>
-                  <dt>Escalation</dt>
-                  <dd>Human gated</dd>
-                </div>
-                <div>
-                  <dt>Model registry</dt>
-                  <dd>{modelMetadata ? "Active" : modelLoading ? "Connecting" : "Unavailable"}</dd>
-                </div>
-              </dl>
-              <div className="trust-chip">
-                <ShieldCheck size={18} />
-                <div>
-                  <span>Governance status</span>
-                  <strong>Controls active</strong>
-                </div>
-              </div>
+                <button className="rail-card__link" type="button" onClick={() => navigate("audit")}>
+                  View audit trail <ArrowRight size={14} />
+                </button>
+              </section>
             </aside>
-          </section>
-
-          <section className="signal-tape" aria-label="Prepared investigation context">
-            <div>
-              <span>Prepared intent</span>
-              <strong>{result?.parsedQuery.pattern?.replaceAll("_", " ") ?? "Awaiting query"}</strong>
-            </div>
-            <div>
-              <span>Active scope</span>
-              <strong>
-                {result
-                  ? `${result.decisionSummary.analyzedScope.transactions} transactions`
-                  : datasetLoading
-                    ? "Loading dataset"
-                    : `${dataset?.transactions.length ?? 0} transactions ready`}
-              </strong>
-            </div>
-            <div>
-              <span>Agent route</span>
-              <strong>
-                {result ? `${result.plan.steps.length} selected tools` : "Query-aware planning"}
-              </strong>
-            </div>
-            <div>
-              <span>Decision control</span>
-              <strong>Human review required</strong>
-            </div>
-          </section>
+          </div>
 
           {result ? (
             <>
@@ -1078,37 +1156,29 @@ export function App() {
           ) : null}
 
           {loading && !result ? <DashboardSkeleton /> : null}
-          {!loading && !result && !error ? (
-            <Card className="ready-state" aria-live="polite">
-              <EmptyState
-                icon={Fingerprint}
-                title="Ready to investigate"
-                detail="Review or edit the prepared query, then click Investigate. No analysis runs until you start it."
-              />
-            </Card>
-          ) : null}
           {result ? (
             <>
               <Metrics result={result} />
 
-              <section className="investigation-grid">
-                <PlanPanel result={result} loading={loading} />
-                <RiskOverview findings={result.findings} />
-              </section>
-
-              <section className="results-layout">
-                <FindingsTable
-                  findings={result.findings}
-                  selectedId={selected?.entityId ?? null}
-                  onSelect={setSelectedId}
-                />
-                <EvidencePanel
-                  finding={selected}
-                  onSendToReview={(finding) => {
-                    changeReviewStatus(finding, "in_review");
-                    navigate("review");
-                  }}
-                />
+              <section className="analysis-layout">
+                <div className="analysis-layout__column">
+                  <PlanPanel result={result} loading={loading} />
+                  <FindingsTable
+                    findings={result.findings}
+                    selectedId={selected?.entityId ?? null}
+                    onSelect={setSelectedId}
+                  />
+                </div>
+                <div className="analysis-layout__column analysis-layout__column--evidence">
+                  <RiskOverview findings={result.findings} />
+                  <EvidencePanel
+                    finding={selected}
+                    onSendToReview={(finding) => {
+                      changeReviewStatus(finding, "in_review");
+                      navigate("review");
+                    }}
+                  />
+                </div>
               </section>
 
               {result.eda ? <EdaPanel result={result} /> : null}
@@ -1762,7 +1832,7 @@ function shortenExample(example: string): string {
   if (example.includes("structuring")) return "Structuring · 30 days";
   if (example.includes("10+")) return "10+ under ₹10k";
   if (example.includes("4521")) return "Customer 4521";
-  return example;
+  return "Broad AML scan";
 }
 
 function dateSpan(finding: RiskFinding): string {
